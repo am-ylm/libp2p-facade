@@ -1,4 +1,4 @@
-package go_libp2p_pnet_node
+package lib
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewPrivateNetNode(t *testing.T) {
-	psk := RandSecret()
+	psk := PNetSecret()
 	n1, err := NewPrivateNetNode(NewOptions(nil, psk))
 	assert.Nil(t, err)
 

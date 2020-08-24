@@ -1,4 +1,4 @@
-package go_libp2p_pnet_node
+package lib
 
 import (
 	"context"
@@ -13,17 +13,25 @@ import (
 	"math/rand"
 )
 
-type ConfigureLibp2pOpts = func() ([]libp2p.Option, error)
+// ConfigureLibp2pOpts is the custom config hook interface
+type ConfigureLibp2pOpts = func([]libp2p.Option) ([]libp2p.Option, error)
 
 // Options holds the needed configuration for creating a private node instance
 type Options struct {
 	Ctx      context.Context
+	// PrivKey of the current node
 	PrivKey  crypto.PrivKey
+	// Secret is the private network secret ([32]byte)
 	Secret   pnet.PSK
+	// Addrs are Multiaddrs for the current node, will fallback to libp2p defaults
 	Addrs    []multiaddr.Multiaddr
+	// Logger to use (see github.com/ipfs/go-log/v2)
+	// will fallback to defaultLogger()
 	Logger	 logging.EventLogger
+	// DS is the data store used by DHT
 	DS       datastore.Batching
-	Libp2pOpts ConfigureLibp2pOpts
+	// CustomOptsHook is a hook for configuring custom libp2p options
+	CustomOptsHook ConfigureLibp2pOpts
 }
 
 // NewOptions creates the minimum needed Options
@@ -42,11 +50,7 @@ func (opts *Options) ToLibP2pOpts() ([]libp2p.Option, error) {
 	if err != nil {
 		return nil, err
 	}
-	customOpts, err := opts.Libp2pOpts()
-	if err != nil {
-		return nil, err
-	}
-	return append([]libp2p.Option{
+	libp2pOpts := []libp2p.Option{
 		libp2p.Identity(opts.PrivKey),
 		libp2p.ListenAddrs(opts.Addrs...),
 		libp2p.PrivateNetwork(opts.Secret),
@@ -57,7 +61,9 @@ func (opts *Options) ToLibP2pOpts() ([]libp2p.Option, error) {
 		libp2p.Security(secio.ID, secio.New),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
-	}, customOpts...), nil
+	}
+	finalOpts, err := opts.CustomOptsHook(libp2pOpts)
+	return finalOpts, err
 }
 
 func (opts *Options) defaults() error {
@@ -66,7 +72,7 @@ func (opts *Options) defaults() error {
 		opts.PrivKey = priv
 	}
 	if opts.Secret == nil {
-		opts.Secret = RandSecret()
+		opts.Secret = PNetSecret()
 	}
 	if opts.Addrs == nil || len(opts.Addrs) == 0 {
 		// currently using libp2p defaults, might be changed
@@ -77,16 +83,16 @@ func (opts *Options) defaults() error {
 	if opts.Logger == nil {
 		opts.Logger = defaultLogger()
 	}
-	if opts.Libp2pOpts == nil {
-		opts.Libp2pOpts = func() ([]libp2p.Option, error) {
-			return []libp2p.Option{}, nil
+	if opts.CustomOptsHook == nil {
+		opts.CustomOptsHook = func(_opts []libp2p.Option) ([]libp2p.Option, error) {
+			return _opts, nil
 		}
 	}
 	return nil
 }
 
-// RandSecret creates a new random secret, 32 length
-func RandSecret() []byte {
+// PNetSecret creates a new random secret
+func PNetSecret() pnet.PSK {
 	return randBytes(32)
 }
 

@@ -1,7 +1,8 @@
-package main
+package circuit_relay
 
 import (
 	"context"
+	pnet_node "github.com/amirylm/go-libp2p-pnet-node/lib"
 	"github.com/libp2p/go-libp2p"
 	connmgr "github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -10,7 +11,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
-	pnet_node "github.com/amirylm/go-libp2p-pnet-node"
 
 	"log"
 	"sync"
@@ -24,7 +24,7 @@ import (
 func TestRelayer(t *testing.T) {
 	var wg sync.WaitGroup
 
-	psk := pnet_node.RandSecret()
+	psk := pnet_node.PNetSecret()
 
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
 	rel, _ := NewRelayer(pnet_node.NewOptions(priv, psk))
@@ -90,11 +90,11 @@ func newNode(psk pnet.PSK, addrs []multiaddr.Multiaddr) (*pnet_node.PrivateNetNo
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
 	ropts := pnet_node.NewOptions(priv, psk)
 	ropts.Addrs = addrs
-	ropts.Libp2pOpts = func() ([]libp2p.Option, error) {
-		return []libp2p.Option{
+	ropts.CustomOptsHook = func(_opts []libp2p.Option) ([]libp2p.Option, error) {
+		return append(_opts,
 			libp2p.EnableRelay(),
 			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, ConnectionsGrace)),
-		}, nil
+		), nil
 	}
 	return pnet_node.NewPrivateNetNode(ropts)
 }

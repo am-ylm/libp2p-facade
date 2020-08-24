@@ -1,4 +1,4 @@
-package main
+package circuit_relay
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
 
-	pnet_node "github.com/amirylm/go-libp2p-pnet-node"
+	pnet_node "github.com/amirylm/go-libp2p-pnet-node/lib"
 )
 
 var (
@@ -21,12 +21,12 @@ var (
 
 // NewRelayer creates an instance of PrivateNetNode with the needed configuration to be a circuit-relay node
 func NewRelayer(opts *pnet_node.Options) (*pnet_node.PrivateNetNode, error) {
-	orig := opts.Libp2pOpts
-	opts.Libp2pOpts = func() ([]libp2p.Option, error) {
-		o := []libp2p.Option{}
+	// wrap libp2p opts hook
+	orig := opts.CustomOptsHook
+	opts.CustomOptsHook = func(o []libp2p.Option) ([]libp2p.Option, error) {
 		var err error
 		if orig != nil {
-			o, err = orig()
+			o, err = orig(o)
 		}
 		o = append(o,
 			libp2p.ConnectionManager(connmgr.NewConnManager(ConnectionsLow, ConnectionsHigh, ConnectionsGrace)),
