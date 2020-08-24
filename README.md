@@ -2,7 +2,7 @@
 
 **WIP**
 
-libp2p private-network node
+libp2p private-network node abstraction, it hides a recipe of libp2p's common protocols and concepts (secio/tls, dht, circuit-relay, etc...)
 
 ## Install
 
