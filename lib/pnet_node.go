@@ -1,4 +1,4 @@
-package go_libp2p_pnet_node
+package lib
 
 import (
 	"context"
@@ -85,6 +85,7 @@ func (n *PrivateNetNode) ConnectToPeers(peers []peer.AddrInfo, bootDht bool) cha
 	return connChannel
 }
 
+// SetupLibp2p will configure all the liibp2p related stuff
 func SetupLibp2p(opts *Options) (host.Host, *kaddht.IpfsDHT, error) {
 	var idht *kaddht.IpfsDHT
 	var err error
