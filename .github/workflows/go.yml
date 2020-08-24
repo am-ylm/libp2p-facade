@@ -32,8 +32,10 @@ jobs:
        #     curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
        #     dep ensure
        # fi
-    - name: Build
-      run: go build -v .
+    - name: Build Lib
+      run: go build -v ./lib
+    - name: Build CMDs
+      run: go build -v ./cmd/...
 
     - name: Test
       run: go test -v -timeout 30s .
