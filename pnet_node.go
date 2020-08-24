@@ -27,7 +27,7 @@ type ConnectionResult struct {
 	ID    peer.ID
 }
 
-// Relayer holds a libp2p node and dht instaces
+// PrivateNetNode holds a libp2p node and dht instaces
 // it abstract the needed configuration and setup for libp2p
 type PrivateNetNode struct {
 	ctx  context.Context
@@ -38,7 +38,7 @@ type PrivateNetNode struct {
 	logger	 logging.EventLogger
 }
 
-// NewRelayer creates an instance of PrivateNetNode
+// NewPrivateNetNode creates an instance of PrivateNetNode
 func NewPrivateNetNode(opts *Options) (*PrivateNetNode, error) {
 	h, dht, err := SetupLibp2p(opts)
 	if err != nil {
