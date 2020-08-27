@@ -31,15 +31,18 @@ type DiscoveryOptions struct {
 }
 
 // NewDiscoveryOptions creates a default options object
-func NewDiscoveryOptions(h host.Host) *DiscoveryOptions {
-	opts := DiscoveryOptions{
-		func(pi peer.AddrInfo) bool {
+func NewDiscoveryOptions(onPeerFound OnPeerFound) *DiscoveryOptions {
+	if onPeerFound == nil {
+		onPeerFound = func(pi peer.AddrInfo) bool {
 			return true
-		},
+		}
+	}
+	opts := DiscoveryOptions{
+		onPeerFound,
 		DefaultDiscoveryServiceTag,
 		DefaultDiscoveryInterval,
 		[]discovery.Service{},
-		h,
+		nil,
 		context.Background(),
 	}
 	return &opts

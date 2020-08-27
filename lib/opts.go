@@ -38,16 +38,14 @@ type Options struct {
 }
 
 // NewOptions creates the minimum needed Options
-func NewOptions(priv crypto.PrivKey, psk pnet.PSK, onPeerFound OnPeerFound) *Options {
+func NewOptions(priv crypto.PrivKey, psk pnet.PSK, discOpts *DiscoveryOptions) *Options {
 	opts := Options{
 		Ctx:     context.Background(),
 		PrivKey: priv,
 		Secret:  psk,
 	}
-	if onPeerFound != nil {
-		disc := NewDiscoveryOptions(nil)
-		disc.OnPeerFound = onPeerFound
-		opts.Discovery = disc
+	if discOpts != nil {
+		opts.Discovery = discOpts
 	}
 	return &opts
 }

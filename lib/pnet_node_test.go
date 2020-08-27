@@ -52,17 +52,17 @@ func TestDiscovery(t *testing.T) {
 		return true
 	}
 	psk := PNetSecret()
-	n1, _ := NewPrivateNetNode(NewOptions(nil, psk, onPeerFound))
+	n1, _ := NewPrivateNetNode(NewOptions(nil, psk, NewDiscoveryOptions(onPeerFound)))
 	log.Printf("n1: %s", n1.Node.ID().Pretty())
 	n1.ConnectToPeers([]peer.AddrInfo{}, true)
 
-	n2, _ := NewPrivateNetNode(NewOptions(nil, psk, onPeerFound))
+	n2, _ := NewPrivateNetNode(NewOptions(nil, psk, NewDiscoveryOptions(onPeerFound)))
 	log.Printf("n2: %s", n2.Node.ID().Pretty())
 	n2.ConnectToPeers([]peer.AddrInfo{}, true)
 
 	time.Sleep(time.Duration(1000) * time.Millisecond)
 
-	n3, _ := NewPrivateNetNode(NewOptions(nil, psk, onPeerFound))
+	n3, _ := NewPrivateNetNode(NewOptions(nil, psk, NewDiscoveryOptions(onPeerFound)))
 	log.Printf("n3: %s", n3.Node.ID().Pretty())
 	n3.ConnectToPeers([]peer.AddrInfo{}, true)
 

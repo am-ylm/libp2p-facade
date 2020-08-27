@@ -20,7 +20,7 @@ import (
 )
 
 func startRelayer(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*pnet_node.PrivateNetNode, error) {
-	rel, err := pnet_relay.NewRelayer(pnet_node.NewOptions(priv, psk))
+	rel, err := pnet_relay.NewRelayer(pnet_node.NewOptions(priv, psk, nil))
 	if err != nil {
 		return rel, err
 	}
