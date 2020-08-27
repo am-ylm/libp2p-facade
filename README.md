@@ -9,7 +9,6 @@ Libp2p config can be extended with a custom options hook.
 In addition, there is a [circuit-relay](https://docs.libp2p.io/concepts/circuit-relay/) node, which can be extended similarly to the basic node. 
 
 TODO:
- - Discovery
  - Gossip Pubsub
 
 ## Install

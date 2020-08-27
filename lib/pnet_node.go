@@ -68,7 +68,7 @@ func (n *PrivateNetNode) ConnectToPeers(peers []peer.AddrInfo, bootDht bool) cha
 			defer wg.Done()
 			err := n.Node.Connect(n.ctx, pinfo)
 			if err != nil {
-				n.logger.Infof("new peer connected: %s", pinfo.String())
+				n.logger.Infof("new peer connected: %s", pinfo.ID.Pretty())
 			}
 			connChannel <- ConnectionResult{err, pinfo.ID}
 		}(pinfo)
@@ -110,7 +110,12 @@ func SetupLibp2p(opts *Options) (host.Host, *kaddht.IpfsDHT, error) {
 		return nil, nil, err
 	}
 
-	return h, idht, nil
+	if opts.Discovery != nil {
+		opts.Discovery.Host = h
+		err = configureDiscovery(opts.Discovery)
+	}
+
+	return h, idht, err
 }
 
 func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*kaddht.IpfsDHT, error) {

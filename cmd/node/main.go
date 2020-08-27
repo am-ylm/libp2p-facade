@@ -18,8 +18,8 @@ import (
 )
 
 func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*pnet_node.PrivateNetNode, error) {
-	nopts := pnet_node.NewOptions(priv, psk)
-	nopts.CustomOptsHook = func(opts []libp2p.Option) ([]libp2p.Option, error) {
+	nopts := pnet_node.NewOptions(priv, psk, pnet_node.NewDiscoveryOptions(nil))
+	nopts.UseLibp2pOpts = func(opts []libp2p.Option) ([]libp2p.Option, error) {
 		return append(opts,
 			libp2p.EnableRelay(),
 			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, pnet_node.ConnectionsGrace)),
