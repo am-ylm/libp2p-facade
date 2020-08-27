@@ -30,16 +30,24 @@ type Options struct {
 	Logger	 logging.EventLogger
 	// DS is the data store used by DHT
 	DS       datastore.Batching
-	// CustomOptsHook is a hook for configuring custom libp2p options
-	CustomOptsHook ConfigureLibp2pOpts
+	// UseLibp2pOpts is a hook for configuring custom libp2p options
+	UseLibp2pOpts ConfigureLibp2pOpts
+	// Discovery contains configuration of discovery services
+	// unless Discovery is nil, local mdns will be added by default
+	Discovery *DiscoveryOptions
 }
 
 // NewOptions creates the minimum needed Options
-func NewOptions(priv crypto.PrivKey, psk pnet.PSK) *Options {
+func NewOptions(priv crypto.PrivKey, psk pnet.PSK, onPeerFound OnPeerFound) *Options {
 	opts := Options{
 		Ctx:     context.Background(),
 		PrivKey: priv,
 		Secret:  psk,
+	}
+	if onPeerFound != nil {
+		disc := NewDiscoveryOptions(nil)
+		disc.OnPeerFound = onPeerFound
+		opts.Discovery = disc
 	}
 	return &opts
 }
@@ -62,7 +70,7 @@ func (opts *Options) ToLibP2pOpts() ([]libp2p.Option, error) {
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
 	}
-	finalOpts, err := opts.CustomOptsHook(libp2pOpts)
+	finalOpts, err := opts.UseLibp2pOpts(libp2pOpts)
 	return finalOpts, err
 }
 
@@ -83,8 +91,8 @@ func (opts *Options) defaults() error {
 	if opts.Logger == nil {
 		opts.Logger = defaultLogger()
 	}
-	if opts.CustomOptsHook == nil {
-		opts.CustomOptsHook = func(_opts []libp2p.Option) ([]libp2p.Option, error) {
+	if opts.UseLibp2pOpts == nil {
+		opts.UseLibp2pOpts = func(_opts []libp2p.Option) ([]libp2p.Option, error) {
 			return _opts, nil
 		}
 	}

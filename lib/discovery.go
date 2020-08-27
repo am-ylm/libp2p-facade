@@ -2,28 +2,47 @@ package lib
 
 import (
 	"context"
-	"time"
 	"log"
+	"time"
 
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery"
 )
+
 // DiscoveryInterval is how often we re-publish our mDNS records.
 const DefaultDiscoveryInterval = time.Minute * 10
 
 // DiscoveryServiceTag is used in our mDNS advertisements to discover other chat peers.
-const DefaultDiscoveryServiceTag = "pubsub"
+const DefaultDiscoveryServiceTag = "pnet:cpubsub"
 
+// OnPeerFound will be triggered on new peer discovery
+// in case it returns false, this node won't connect to the given peer
 type OnPeerFound = func(pi peer.AddrInfo) bool
 
+// DiscoveryOptions
 type DiscoveryOptions struct {
 	OnPeerFound OnPeerFound
 	ServiceTag  string
 	Interval    time.Duration
-	Services 	[]discovery.Service
-	Host host.Host
-	Ctx context.Context
+	Services    []discovery.Service
+	Host        host.Host
+	Ctx         context.Context
+}
+
+// NewDiscoveryOptions creates a default options object
+func NewDiscoveryOptions(h host.Host) *DiscoveryOptions {
+	opts := DiscoveryOptions{
+		func(pi peer.AddrInfo) bool {
+			return true
+		},
+		DefaultDiscoveryServiceTag,
+		DefaultDiscoveryInterval,
+		[]discovery.Service{},
+		h,
+		context.Background(),
+	}
+	return &opts
 }
 
 // configureDiscovery binds mDNS discovery services
@@ -32,7 +51,8 @@ func configureDiscovery(opts *DiscoveryOptions) error {
 
 	// setup default mDNS discovery to find local peers
 	disc, err := discovery.NewMdnsService(context.Background(), opts.Host, opts.Interval, opts.ServiceTag)
-	if err != nil && len(discoveryServices) == 0 { // if couldn't setup local mDNS and no other service was provided
+	// if couldn't setup local mDNS and no other service was provided -> exit
+	if err != nil && len(discoveryServices) == 0 {
 		return err
 	}
 	discoveryServices = append(discoveryServices, disc)
@@ -53,6 +73,7 @@ type discoveryNotifee struct {
 
 // HandlePeerFound connects to peers discovered via mDNS. Once they're connected,
 func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
+	log.Printf("node %s", n.h.ID().Pretty())
 	printPeer("discovered new peer", pi)
 	if n.onPeerFound == nil || n.onPeerFound(pi) {
 		err := n.h.Connect(n.ctx, pi)

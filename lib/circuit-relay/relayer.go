@@ -21,9 +21,9 @@ var (
 
 // NewRelayer creates an instance of PrivateNetNode with the needed configuration to be a circuit-relay node
 func NewRelayer(opts *pnet_node.Options) (*pnet_node.PrivateNetNode, error) {
-	// wrap libp2p opts hook
-	orig := opts.CustomOptsHook
-	opts.CustomOptsHook = func(o []libp2p.Option) ([]libp2p.Option, error) {
+	// overriding libp2p opts hook
+	orig := opts.UseLibp2pOpts
+	opts.UseLibp2pOpts = func(o []libp2p.Option) ([]libp2p.Option, error) {
 		var err error
 		if orig != nil {
 			o, err = orig(o)
@@ -37,6 +37,12 @@ func NewRelayer(opts *pnet_node.Options) (*pnet_node.PrivateNetNode, error) {
 	return pnet_node.NewPrivateNetNode(opts)
 }
 
+func RandomCircuitRelayAddr(target peer.ID) multiaddr.Multiaddr {
+	rawAddr := fmt.Sprintf("/p2p-circuit/p2p/%s", target.Pretty())
+	addr, _ := multiaddr.NewMultiaddr(rawAddr)
+	return addr
+}
+
 func CircuitRelayAddr(relay, target peer.ID) multiaddr.Multiaddr {
 	rawAddr := fmt.Sprintf("/p2p/%s/p2p-circuit/p2p/%s", relay.Pretty(), target.Pretty())
 	addr, _ := multiaddr.NewMultiaddr(rawAddr)
@@ -46,6 +52,7 @@ func CircuitRelayAddr(relay, target peer.ID) multiaddr.Multiaddr {
 func CircuitRelayAddrInfo(relay, target peer.ID) peer.AddrInfo {
 	return peer.AddrInfo{
 		ID:    target,
+		//Addrs: []multiaddr.Multiaddr{RandomCircuitRelayAddr(target)},
 		Addrs: []multiaddr.Multiaddr{CircuitRelayAddr(relay, target)},
 	}
 }
