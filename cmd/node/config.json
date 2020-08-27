@@ -1,15 +1,5 @@
 {
   "peers": [
-    {
-      "ID": "12D3KooWNdPPTfYEisARUD2wjXxfPAVMGs5UQKQ5erWVGSYBzYv4",
-      "Addrs": [
-        "/ip4/127.0.0.1/tcp/53172",
-        "/ip4/10.0.0.4/tcp/53172",
-        "/ip4/10.26.249.167/tcp/53172",
-        "/ip6/::1/tcp/53173",
-        "/ip6/fdd7:9d91:d3a9:0:1cbd:587b:f285:ca70/tcp/53173",
-        "/ip6/fdd7:9d91:d3a9:0:1d37:cd30:aaa4:291/tcp/53173"
-      ]
-    }
+    {"Addrs":["/ip4/127.0.0.1/tcp/54586","/ip4/192.168.43.9/tcp/54586","/ip6/::1/tcp/54587"],"ID":"12D3KooWPRQQDJr7ptNfuZWrL6b2EpBAr92RxoYG3hXRBLagPkYq"}
   ]
 }
