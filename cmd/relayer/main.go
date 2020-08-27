@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/libp2p/go-libp2p-core/host"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	pnet_node "github.com/amirylm/go-libp2p-pnet-node/lib"
 	pnet_relay "github.com/amirylm/go-libp2p-pnet-node/lib/circuit-relay"
+
 
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -39,7 +41,7 @@ func main() {
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
 	psk := []byte("XVlBzgbaiCMRAjWwhTHctcuAxhxKQFDa")
 
-	var cfg pnet_node.Options
+	var cfg Config
 	p, err := filepath.Abs("./cmd/relayer/config.json")
 	check(err)
 	b, err := ioutil.ReadFile(p)
@@ -52,7 +54,7 @@ func main() {
 	check(err)
 
 	log.Println("circuit relay node is ready:")
-	log.Println(pnet_node.SerializePeer(rel.Node))
+	printHost(rel.Node)
 
 	// wait for a SIGINT or SIGTERM signal
 	ch := make(chan os.Signal, 1)
@@ -69,4 +71,16 @@ func check(err error) {
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+func printHost(h host.Host) {
+	id := h.ID().Pretty()
+	log.Printf("%s, listening on:", id)
+	for _, addr := range h.Addrs() {
+		log.Printf("\t- %s", addr.String())
+	}
+}
+
+type Config struct {
+	Peers []peer.AddrInfo `json:"peers"`
 }
