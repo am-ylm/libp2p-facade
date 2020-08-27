@@ -33,7 +33,7 @@ func TestNewPrivateNetNode(t *testing.T) {
 
 func TestDiscovery(t *testing.T) {
 	var discwg sync.WaitGroup
-	timeout := time.After(4 * time.Second)
+	timeout := time.After(5 * time.Second)
 	done := make(chan bool)
 	// 3 nodes -> at least 3 discovery events
 	n := 3
@@ -66,18 +66,19 @@ func TestDiscovery(t *testing.T) {
 	log.Printf("n3: %s", n3.Node.ID().Pretty())
 	n3.ConnectToPeers([]peer.AddrInfo{}, true)
 
-	time.Sleep(time.Duration(1000) * time.Millisecond)
-
 	go func() {
 		discwg.Wait()
-		peers3 := n3.Node.Peerstore().Peers()
-		assert.Equal(t, n, len(peers3), "node should have peers of length n")
 		done <- true
 	}()
+
+	time.Sleep(time.Duration(1000) * time.Millisecond)
 
 	select {
 	case <-timeout:
 		assert.Fail(t, "didn't receive enough discovery events")
-	case <-done:
+	case <-done: {
+		peers3 := n3.Node.Peerstore().Peers()
+		assert.Equal(t, n, len(peers3), "node should have peers of length n")
+	}
 	}
 }
