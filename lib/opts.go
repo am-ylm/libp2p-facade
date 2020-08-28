@@ -2,15 +2,16 @@ package lib
 
 import (
 	"context"
+
 	"github.com/ipfs/go-datastore"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	secio "github.com/libp2p/go-libp2p-secio"
 	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	"github.com/multiformats/go-multiaddr"
-	"math/rand"
 )
 
 // ConfigureLibp2pOpts is the custom config hook interface
@@ -18,23 +19,25 @@ type ConfigureLibp2pOpts = func([]libp2p.Option) ([]libp2p.Option, error)
 
 // Options holds the needed configuration for creating a private node instance
 type Options struct {
-	Ctx      context.Context
+	Ctx context.Context
 	// PrivKey of the current node
-	PrivKey  crypto.PrivKey
+	PrivKey crypto.PrivKey
 	// Secret is the private network secret ([32]byte)
-	Secret   pnet.PSK
+	Secret pnet.PSK
 	// Addrs are Multiaddrs for the current node, will fallback to libp2p defaults
-	Addrs    []multiaddr.Multiaddr
+	Addrs []multiaddr.Multiaddr
 	// Logger to use (see github.com/ipfs/go-log/v2)
 	// will fallback to defaultLogger()
-	Logger	 logging.EventLogger
+	Logger logging.EventLogger
 	// DS is the data store used by DHT
-	DS       datastore.Batching
+	DS datastore.Batching
 	// UseLibp2pOpts is a hook for configuring custom libp2p options
 	UseLibp2pOpts ConfigureLibp2pOpts
 	// Discovery contains configuration of discovery services
 	// unless Discovery is nil, local mdns will be added by default
 	Discovery *DiscoveryOptions
+	// Peers are nodes that we want to connect on bootstrap
+	Peers []peer.AddrInfo
 }
 
 // NewOptions creates the minimum needed Options
@@ -95,24 +98,4 @@ func (opts *Options) defaults() error {
 		}
 	}
 	return nil
-}
-
-// PNetSecret creates a new random secret
-func PNetSecret() pnet.PSK {
-	return randBytes(32)
-}
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-// randBytes creates a random string in the given length
-func randBytes(n int) []byte {
-	b := make([]byte, n)
-	letters := len(letterBytes)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(letters)]
-	}
-	return b[:]
-}
-
-func defaultLogger() logging.EventLogger {
-	return logging.Logger("libp2p-pnet-node")
 }
