@@ -35,7 +35,7 @@ type Options struct {
 	// Peers are nodes that we want to connect on bootstrap
 	Peers []peer.AddrInfo
 	// UsePubsub is a flag that can trun on/off gossip pubsub
-	// by default, if discovery is provided, UsePubsub will be set to true
+	// by default, when using NewOptions() if discovery is provided, UsePubsub will be set to true
 	UsePubsub bool
 }
 
@@ -44,6 +44,9 @@ func NewOptions(priv crypto.PrivKey, psk pnet.PSK, discOpts *DiscoveryOptions) *
 	opts := Options{
 		PrivKey: priv,
 		Secret:  psk,
+		UseLibp2pOpts: func(opts []libp2p.Option) ([]libp2p.Option, error) {
+			return opts, nil
+		},
 	}
 	if discOpts != nil {
 		opts.Discovery = discOpts
