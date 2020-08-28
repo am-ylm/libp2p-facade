@@ -111,8 +111,7 @@ func SetupLibp2p(opts *Options) (host.Host, *kaddht.IpfsDHT, error) {
 	}
 
 	if opts.Discovery != nil {
-		opts.Discovery.Host = h
-		err = configureDiscovery(opts.Discovery)
+		err = configureDiscovery(opts.Discovery, h)
 	}
 
 	return h, idht, err

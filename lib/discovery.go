@@ -26,7 +26,6 @@ type DiscoveryOptions struct {
 	ServiceTag  string
 	Interval    time.Duration
 	Services    []discovery.Service
-	Host        host.Host
 	Ctx         context.Context
 }
 
@@ -42,18 +41,17 @@ func NewDiscoveryOptions(onPeerFound OnPeerFound) *DiscoveryOptions {
 		DefaultDiscoveryServiceTag,
 		DefaultDiscoveryInterval,
 		[]discovery.Service{},
-		nil,
 		context.Background(),
 	}
 	return &opts
 }
 
 // configureDiscovery binds mDNS discovery services
-func configureDiscovery(opts *DiscoveryOptions) error {
+func configureDiscovery(opts *DiscoveryOptions, h host.Host) error {
 	discoveryServices := opts.Services
 
 	// setup default mDNS discovery to find local peers
-	disc, err := discovery.NewMdnsService(context.Background(), opts.Host, opts.Interval, opts.ServiceTag)
+	disc, err := discovery.NewMdnsService(context.Background(), h, opts.Interval, opts.ServiceTag)
 	// if couldn't setup local mDNS and no other service was provided -> exit
 	if err != nil && len(discoveryServices) == 0 {
 		return err
@@ -61,7 +59,7 @@ func configureDiscovery(opts *DiscoveryOptions) error {
 	discoveryServices = append(discoveryServices, disc)
 
 	for _, disc := range discoveryServices {
-		n := discoveryNotifee{opts.Host, opts.Ctx, opts.OnPeerFound}
+		n := discoveryNotifee{h, opts.Ctx, opts.OnPeerFound}
 		disc.RegisterNotifee(&n)
 	}
 
