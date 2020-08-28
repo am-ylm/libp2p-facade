@@ -50,7 +50,7 @@ func CircuitRelayAddr(relay, target peer.ID) multiaddr.Multiaddr {
 
 func CircuitRelayAddrInfo(relay, target peer.ID) peer.AddrInfo {
 	return peer.AddrInfo{
-		ID:    target,
+		ID: target,
 		//Addrs: []multiaddr.Multiaddr{RandomCircuitRelayAddr(target)},
 		Addrs: []multiaddr.Multiaddr{CircuitRelayAddr(relay, target)},
 	}

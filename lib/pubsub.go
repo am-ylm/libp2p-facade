@@ -6,7 +6,7 @@ import (
 )
 
 type PubsubEmitter struct {
-	ps    *pubsub.PubSub
+	ps *pubsub.PubSub
 
 	self peer.ID
 

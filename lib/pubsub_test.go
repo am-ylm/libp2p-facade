@@ -98,16 +98,16 @@ func setupNodesGroup(n int, psk pnet.PSK) ([]*PrivateNetNode, error) {
 		discovered <- true
 	}()
 
-
 	select {
 	case <-timeout:
 		return nil, errors.New("setupNodesGroup timeout")
-	case <-discovered: {
-		actualPeers := nodes[n-1].Node.Peerstore().Peers()
-		if len(actualPeers) != n {
-			return nil, errors.New("could not connect to all peers")
+	case <-discovered:
+		{
+			actualPeers := nodes[n-1].Node.Peerstore().Peers()
+			if len(actualPeers) != n {
+				return nil, errors.New("could not connect to all peers")
+			}
 		}
-	}
 	}
 	return nodes, nil
 }

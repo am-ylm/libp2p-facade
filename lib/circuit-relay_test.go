@@ -43,7 +43,7 @@ func TestRelayer(t *testing.T) {
 	go func() {
 		conns := n1.ConnectToPeers([]peer.AddrInfo{relInfo}, true)
 		for conn := range conns {
-			log.Println("new connection " + conn.ID.String() + ", error: ", conn.Error)
+			log.Println("new connection "+conn.ID.String()+", error: ", conn.Error)
 		}
 		wg.Done()
 	}()
@@ -62,7 +62,7 @@ func TestRelayer(t *testing.T) {
 	go func() {
 		conns := n2.ConnectToPeers([]peer.AddrInfo{relInfo}, true)
 		for conn := range conns {
-			log.Println("new connection " + conn.ID.String() + ", error: ", conn.Error)
+			log.Println("new connection "+conn.ID.String()+", error: ", conn.Error)
 		}
 		wg.Done()
 	}()
@@ -74,7 +74,7 @@ func TestRelayer(t *testing.T) {
 	go func() {
 		conns := n1.ConnectToPeers([]peer.AddrInfo{n2relayInfo}, false)
 		for conn := range conns {
-			log.Println("new connection " + conn.ID.String() + ", error: ", conn.Error)
+			log.Println("new connection "+conn.ID.String()+", error: ", conn.Error)
 		}
 		wg.Done()
 	}()

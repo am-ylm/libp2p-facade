@@ -31,12 +31,12 @@ type PrivateNetNode struct {
 
 	Emitter *PubsubEmitter
 
-	logger	 logging.EventLogger
+	logger logging.EventLogger
 }
 
 // NewPrivateNetNode creates an instance of PrivateNetNode
 func NewPrivateNetNode(ctx context.Context, opts *Options) (*PrivateNetNode, error) {
-	h, dht,  ps, err := SetupLibp2p(ctx, opts)
+	h, dht, ps, err := SetupLibp2p(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
