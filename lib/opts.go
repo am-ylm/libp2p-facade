@@ -1,8 +1,6 @@
 package lib
 
 import (
-	"context"
-
 	"github.com/ipfs/go-datastore"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
@@ -10,7 +8,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	secio "github.com/libp2p/go-libp2p-secio"
-	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -19,7 +16,6 @@ type ConfigureLibp2pOpts = func([]libp2p.Option) ([]libp2p.Option, error)
 
 // Options holds the needed configuration for creating a private node instance
 type Options struct {
-	Ctx context.Context
 	// PrivKey of the current node
 	PrivKey crypto.PrivKey
 	// Secret is the private network secret ([32]byte)
@@ -38,17 +34,20 @@ type Options struct {
 	Discovery *DiscoveryOptions
 	// Peers are nodes that we want to connect on bootstrap
 	Peers []peer.AddrInfo
+	// UsePubsub is a flag that can trun on/off gossip pubsub
+	// by default, if discovery is provided, UsePubsub will be set to true
+	UsePubsub bool
 }
 
 // NewOptions creates the minimum needed Options
 func NewOptions(priv crypto.PrivKey, psk pnet.PSK, discOpts *DiscoveryOptions) *Options {
 	opts := Options{
-		Ctx:     context.Background(),
 		PrivKey: priv,
 		Secret:  psk,
 	}
 	if discOpts != nil {
 		opts.Discovery = discOpts
+		opts.UsePubsub = true
 	}
 	return &opts
 }
@@ -66,7 +65,7 @@ func (opts *Options) ToLibP2pOpts() ([]libp2p.Option, error) {
 		libp2p.NATPortMap(),
 		libp2p.EnableAutoRelay(),
 		libp2p.EnableNATService(),
-		libp2p.Security(libp2ptls.ID, libp2ptls.New),
+		//libp2p.Security(libp2ptls.ID, libp2ptls.New),
 		libp2p.Security(secio.ID, secio.New),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,

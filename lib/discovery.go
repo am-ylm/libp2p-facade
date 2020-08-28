@@ -3,6 +3,7 @@ package lib
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/host"
@@ -14,7 +15,7 @@ import (
 const DefaultDiscoveryInterval = time.Minute * 10
 
 // DiscoveryServiceTag is used in our mDNS advertisements to discover other chat peers.
-const DefaultDiscoveryServiceTag = "pnet:cpubsub"
+const DefaultDiscoveryServiceTag = "pnet:pubsub"
 
 // OnPeerFound will be triggered on new peer discovery
 // in case it returns false, this node won't connect to the given peer
@@ -26,7 +27,6 @@ type DiscoveryOptions struct {
 	ServiceTag  string
 	Interval    time.Duration
 	Services    []discovery.Service
-	Host        host.Host
 	Ctx         context.Context
 }
 
@@ -42,18 +42,33 @@ func NewDiscoveryOptions(onPeerFound OnPeerFound) *DiscoveryOptions {
 		DefaultDiscoveryServiceTag,
 		DefaultDiscoveryInterval,
 		[]discovery.Service{},
-		nil,
 		context.Background(),
 	}
 	return &opts
 }
 
+func OnPeerFoundWaitGroup(wg *sync.WaitGroup) OnPeerFound {
+	return func(pi peer.AddrInfo) bool {
+		go func() {
+			defer func() {
+				// recover from calling Done on a negative wait group counter
+				// this originates in a different behavior of discovery notifications cross OS
+				if r := recover(); r != nil {
+					return
+				}
+			}()
+			wg.Done()
+		}()
+		return true
+	}
+}
+
 // configureDiscovery binds mDNS discovery services
-func configureDiscovery(opts *DiscoveryOptions) error {
+func configureDiscovery(opts *DiscoveryOptions, h host.Host) error {
 	discoveryServices := opts.Services
 
 	// setup default mDNS discovery to find local peers
-	disc, err := discovery.NewMdnsService(context.Background(), opts.Host, opts.Interval, opts.ServiceTag)
+	disc, err := discovery.NewMdnsService(context.Background(), h, opts.Interval, opts.ServiceTag)
 	// if couldn't setup local mDNS and no other service was provided -> exit
 	if err != nil && len(discoveryServices) == 0 {
 		return err
@@ -61,7 +76,7 @@ func configureDiscovery(opts *DiscoveryOptions) error {
 	discoveryServices = append(discoveryServices, disc)
 
 	for _, disc := range discoveryServices {
-		n := discoveryNotifee{opts.Host, opts.Ctx, opts.OnPeerFound}
+		n := discoveryNotifee{h, opts.Ctx, opts.OnPeerFound}
 		disc.RegisterNotifee(&n)
 	}
 
