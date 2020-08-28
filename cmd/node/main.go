@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -25,7 +26,7 @@ func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*pnet_
 			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, pnet_node.ConnectionsGrace)),
 		), nil
 	}
-	node, err := pnet_node.NewPrivateNetNode(nopts)
+	node, err := pnet_node.NewPrivateNetNode(context.Background(), nopts)
 	check(err)
 
 	conns := node.ConnectToPeers(peers, true)

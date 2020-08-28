@@ -3,6 +3,7 @@ package lib
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/host"
@@ -14,7 +15,7 @@ import (
 const DefaultDiscoveryInterval = time.Minute * 10
 
 // DiscoveryServiceTag is used in our mDNS advertisements to discover other chat peers.
-const DefaultDiscoveryServiceTag = "pnet:cpubsub"
+const DefaultDiscoveryServiceTag = "pnet:pubsub"
 
 // OnPeerFound will be triggered on new peer discovery
 // in case it returns false, this node won't connect to the given peer
@@ -44,6 +45,22 @@ func NewDiscoveryOptions(onPeerFound OnPeerFound) *DiscoveryOptions {
 		context.Background(),
 	}
 	return &opts
+}
+
+func OnPeerFoundWaitGroup(wg *sync.WaitGroup) OnPeerFound {
+	return func(pi peer.AddrInfo) bool {
+		go func() {
+			defer func() {
+				// recover from calling Done on a negative wait group counter
+				// this originates in a different behavior of discovery notifications cross OS
+				if r := recover(); r != nil {
+					return
+				}
+			}()
+			wg.Done()
+		}()
+		return true
+	}
 }
 
 // configureDiscovery binds mDNS discovery services

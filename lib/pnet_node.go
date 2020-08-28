@@ -10,15 +10,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	record "github.com/libp2p/go-libp2p-record"
 	"sync"
-	"time"
-)
-
-var (
-	ConnectionsLow   = 100
-	ConnectionsHigh  = 500
-	ConnectionsGrace = time.Minute
 )
 
 // ConnectionResult is the used to abstract connection try
@@ -35,16 +29,19 @@ type PrivateNetNode struct {
 
 	Dht *kaddht.IpfsDHT
 
+	Emitter *PubsubEmitter
+
 	logger	 logging.EventLogger
 }
 
 // NewPrivateNetNode creates an instance of PrivateNetNode
-func NewPrivateNetNode(opts *Options) (*PrivateNetNode, error) {
-	h, dht, err := SetupLibp2p(opts)
+func NewPrivateNetNode(ctx context.Context, opts *Options) (*PrivateNetNode, error) {
+	h, dht,  ps, err := SetupLibp2p(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	n := PrivateNetNode{opts.Ctx, h, dht, opts.Logger}
+	em := NewPubSubEmitter(ps, h.ID())
+	n := PrivateNetNode{ctx, h, dht, em, opts.Logger}
 	return &n, nil
 }
 
@@ -86,35 +83,39 @@ func (n *PrivateNetNode) ConnectToPeers(peers []peer.AddrInfo, bootDht bool) cha
 }
 
 // SetupLibp2p will configure all the liibp2p related stuff
-func SetupLibp2p(opts *Options) (host.Host, *kaddht.IpfsDHT, error) {
+func SetupLibp2p(ctx context.Context, opts *Options) (host.Host, *kaddht.IpfsDHT, *pubsub.PubSub, error) {
 	var idht *kaddht.IpfsDHT
 	var err error
 
 	libp2pOpts, err := opts.ToLibP2pOpts()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	libp2pOpts = append(libp2pOpts,
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-			idht, err = newDHT(opts.Ctx, h, opts.DS)
+			idht, err = newDHT(ctx, h, opts.DS)
 			return idht, err
 		}),
 	)
 
 	h, err := libp2p.New(
-		opts.Ctx,
+		ctx,
 		libp2pOpts...,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
+	var ps *pubsub.PubSub
 	if opts.Discovery != nil {
 		err = configureDiscovery(opts.Discovery, h)
+		if err == nil {
+			ps, err = pubsub.NewGossipSub(ctx, h)
+		}
 	}
 
-	return h, idht, err
+	return h, idht, ps, err
 }
 
 func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*kaddht.IpfsDHT, error) {
