@@ -1,4 +1,4 @@
-module github.com/amirylm/go-libp2p-pnet-node
+module github.com/amirylm/priv-libp2p-node
 
 go 1.13
 

@@ -10,15 +10,15 @@ import (
 	"path/filepath"
 	"syscall"
 
-	pnet_node "github.com/amirylm/go-libp2p-pnet-node/lib"
+	p2pnode "github.com/amirylm/priv-libp2p-node/lib"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 )
 
-func startRelayer(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*pnet_node.PrivateNetNode, error) {
-	rel, err := pnet_node.NewRelayer(context.Background(), pnet_node.NewOptions(priv, psk, nil))
+func startRelayer(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*p2pnode.PrivateNetNode, error) {
+	rel, err := p2pnode.NewRelayer(context.Background(), p2pnode.NewOptions(priv, psk, nil))
 	if err != nil {
 		return rel, err
 	}
@@ -39,7 +39,7 @@ func main() {
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
 	psk := []byte("XVlBzgbaiCMRAjWwhTHctcuAxhxKQFDa")
 
-	var cfg pnet_node.Options
+	var cfg p2pnode.Options
 	p, err := filepath.Abs("./cmd/relayer/config.json")
 	check(err)
 	b, err := ioutil.ReadFile(p)
@@ -52,7 +52,7 @@ func main() {
 	check(err)
 
 	log.Println("circuit relay node is ready:")
-	log.Println(pnet_node.SerializePeer(rel.Node))
+	log.Println(p2pnode.SerializePeer(rel.Node))
 
 	// wait for a SIGINT or SIGTERM signal
 	ch := make(chan os.Signal, 1)

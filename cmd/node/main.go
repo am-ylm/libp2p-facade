@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	pnet_node "github.com/amirylm/go-libp2p-pnet-node/lib"
+	p2pnode "github.com/amirylm/priv-libp2p-node/lib"
 	"github.com/libp2p/go-libp2p"
 	connmgr "github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -18,15 +18,15 @@ import (
 	"github.com/libp2p/go-libp2p-core/pnet"
 )
 
-func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*pnet_node.PrivateNetNode, error) {
-	nopts := pnet_node.NewOptions(priv, psk, pnet_node.NewDiscoveryOptions(nil))
+func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*p2pnode.PrivateNetNode, error) {
+	nopts := p2pnode.NewOptions(priv, psk, p2pnode.NewDiscoveryOptions(nil))
 	nopts.UseLibp2pOpts = func(opts []libp2p.Option) ([]libp2p.Option, error) {
 		return append(opts,
 			libp2p.EnableRelay(),
-			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, pnet_node.ConnectionsGrace)),
+			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, p2pnode.ConnectionsGrace)),
 		), nil
 	}
-	node, err := pnet_node.NewPrivateNetNode(context.Background(), nopts)
+	node, err := p2pnode.NewPrivateNetNode(context.Background(), nopts)
 	check(err)
 
 	conns := node.ConnectToPeers(peers, true)
@@ -45,7 +45,7 @@ func main() {
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
 	psk := []byte("XVlBzgbaiCMRAjWwhTHctcuAxhxKQFDa")
 
-	var cfg pnet_node.Options
+	var cfg p2pnode.Options
 	p, err := filepath.Abs("./cmd/node/config.json")
 	check(err)
 	b, err := ioutil.ReadFile(p)
@@ -58,7 +58,7 @@ func main() {
 	check(err)
 
 	log.Println("node is ready:")
-	log.Println(pnet_node.SerializePeer(node.Node))
+	log.Println(p2pnode.SerializePeer(node.Node))
 
 	// wait for a SIGINT or SIGTERM signal
 	ch := make(chan os.Signal, 1)

@@ -1,4 +1,4 @@
-# go-libp2p-pnet-node
+# priv-libp2p-node
 
 **WIP**
 
@@ -13,7 +13,7 @@ In addition, there is a [circuit-relay](https://docs.libp2p.io/concepts/circuit-
 As a library:
 
 ```bash
-go get github.com/amirylm/go-libp2p-pnet-node
+go get github.com/amirylm/priv-libp2p-node
 ```
 
 
@@ -27,7 +27,7 @@ package main
 import (
     "log"
 
-	pnet_node "github.com/amirylm/go-libp2p-pnet-node/lib"
+	p2pnode "github.com/amirylm/priv-libp2p-node/lib"
 	
 	"github.com/libp2p/go-libp2p"
 	connmgr "github.com/libp2p/go-libp2p-connmgr"
@@ -36,15 +36,15 @@ import (
 	"github.com/libp2p/go-libp2p-core/pnet"
 )
 
-func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*pnet_node.PrivateNetNode, error) {
-	nopts := pnet_node.NewOptions(priv, psk)
+func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*p2pnode.PrivateNetNode, error) {
+	nopts := p2pnode.NewOptions(priv, psk)
 	nopts.Libp2pOpts = func() ([]libp2p.Option, error) {
 		return []libp2p.Option{
 			libp2p.EnableRelay(),
-			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, pnet_node.ConnectionsGrace)),
+			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, p2pnode.ConnectionsGrace)),
 		}, nil
 	}
-	node, _ := pnet_node.NewPrivateNetNode(nopts)
+	node, _ := p2pnode.NewPrivateNetNode(nopts)
 
 	conns := node.ConnectToPeers(peers, true)
 	for conn := range conns {
