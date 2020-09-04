@@ -3,38 +3,32 @@ package main
 import (
 	"context"
 	"encoding/json"
+	p2pnode "github.com/amirylm/priv-libp2p-node/core"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/pnet"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
-
-	p2pnode "github.com/amirylm/priv-libp2p-node/lib"
-	"github.com/libp2p/go-libp2p"
-	connmgr "github.com/libp2p/go-libp2p-connmgr"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/pnet"
 )
 
-func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*p2pnode.PrivateNetNode, error) {
-	nopts := p2pnode.NewOptions(priv, psk, p2pnode.NewDiscoveryOptions(nil))
-	nopts.UseLibp2pOpts = func(opts []libp2p.Option) ([]libp2p.Option, error) {
-		return append(opts,
-			libp2p.EnableRelay(),
-			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, p2pnode.ConnectionsGrace)),
-		), nil
-	}
-	node, err := p2pnode.NewPrivateNetNode(context.Background(), nopts)
-	check(err)
+func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (p2pnode.LibP2PNode, error) {
+	node := p2pnode.NewBaseNode(context.Background(),
+		p2pnode.NewConfig(priv, psk),
+		p2pnode.NewDiscoveryConfig(nil),
+		libp2p.EnableRelay(),
+	)
 
-	conns := node.ConnectToPeers(peers, true)
+	conns := p2pnode.Connect(node, peers, true)
 	for conn := range conns {
 		if conn.Error != nil {
-			log.Printf("could not connect to %s", conn.ID)
+			log.Printf("could not connect to %s", conn.Info.ID)
 		} else {
-			log.Printf("connected to %s", conn.ID)
+			log.Printf("connected to %s", conn.Info.ID)
 		}
 	}
 
@@ -45,7 +39,7 @@ func main() {
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
 	psk := []byte("XVlBzgbaiCMRAjWwhTHctcuAxhxKQFDa")
 
-	var cfg p2pnode.Options
+	var cfg p2pnode.Config
 	p, err := filepath.Abs("./cmd/node/config.json")
 	check(err)
 	b, err := ioutil.ReadFile(p)
@@ -58,17 +52,14 @@ func main() {
 	check(err)
 
 	log.Println("node is ready:")
-	log.Println(p2pnode.SerializePeer(node.Node))
+	log.Println(p2pnode.SerializePeer(node.Host()))
 
 	// wait for a SIGINT or SIGTERM signal
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
 
-	errs := node.Close()
-	for _, err := range errs {
-		check(err)
-	}
+	check(node.Close())
 }
 
 func check(err error) {

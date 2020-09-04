@@ -1,4 +1,4 @@
-package lib
+package core
 
 import (
 	"bytes"
@@ -33,7 +33,7 @@ func TestPubSubEmitter(t *testing.T) {
 	var pswg sync.WaitGroup
 	data := []byte("data:my-topic")
 	pswg.Add(1)
-	sub1, err := nodes[0].Emitter.Subscribe("my-topic")
+	sub1, err := Subscribe(nodes[0], "my-topic")
 	assert.Nil(t, err)
 	go func() {
 		for {
@@ -44,7 +44,7 @@ func TestPubSubEmitter(t *testing.T) {
 		}
 	}()
 
-	sub2, err := nodes[1].Emitter.Subscribe("other-topic")
+	sub2, err := Subscribe(nodes[1],"other-topic")
 	assert.Nil(t, err)
 	go func() {
 		for {
@@ -54,7 +54,7 @@ func TestPubSubEmitter(t *testing.T) {
 		}
 	}()
 
-	topic3, err := nodes[2].Emitter.Topic("my-topic")
+	topic3, err := Topic(nodes[2], "my-topic")
 	assert.Nil(t, err)
 	go func() {
 		time.Sleep(1000 * time.Millisecond)
@@ -63,24 +63,20 @@ func TestPubSubEmitter(t *testing.T) {
 	pswg.Wait()
 }
 
-func createNode(psk pnet.PSK, onPeerFound OnPeerFound) *PrivateNetNode {
-	n, err := NewPrivateNetNode(context.Background(), NewOptions(nil, psk, NewDiscoveryOptions(onPeerFound)))
-	if err != nil {
-		log.Fatalf("could not create node: %s", err.Error())
-		return nil
-	}
-	log.Printf("new node: %s", n.Node.ID().Pretty())
-	n.ConnectToPeers([]peer.AddrInfo{}, true)
+func createNode(psk pnet.PSK, onPeerFound OnPeerFound) *BaseNode {
+	n := NewBaseNode(context.Background(), NewConfig(nil, psk), NewDiscoveryConfig(onPeerFound))
+	log.Printf("new node: %s", n.Host().ID().Pretty())
+	Connect(n, []peer.AddrInfo{}, true)
 	return n
 }
 
-func setupNodesGroup(n int, psk pnet.PSK) ([]*PrivateNetNode, error) {
+func setupNodesGroup(n int, psk pnet.PSK) ([]*BaseNode, error) {
 	var discwg sync.WaitGroup
 	discwg.Add(n)
 
 	onPeerFound := OnPeerFoundWaitGroup(&discwg)
-	nodes := []*PrivateNetNode{}
-	timeout := time.After(5 * time.Second)
+	nodes := []*BaseNode{}
+	timeout := time.After(6 * time.Second)
 	discovered := make(chan bool)
 
 	i := n
@@ -103,7 +99,7 @@ func setupNodesGroup(n int, psk pnet.PSK) ([]*PrivateNetNode, error) {
 		return nil, errors.New("setupNodesGroup timeout")
 	case <-discovered:
 		{
-			actualPeers := nodes[n-1].Node.Peerstore().Peers()
+			actualPeers := nodes[n-1].Host().Peerstore().Peers()
 			if len(actualPeers) != n {
 				return nil, errors.New("could not connect to all peers")
 			}
