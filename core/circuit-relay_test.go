@@ -1,4 +1,4 @@
-package relay
+package core
 
 import (
 	"context"
@@ -13,8 +13,6 @@ import (
 	"log"
 	"sync"
 	"testing"
-
-	p2pnode "github.com/amirylm/priv-libp2p-node/core"
 )
 
 // - create circuit-relay node
@@ -24,11 +22,12 @@ import (
 func TestRelayer(t *testing.T) {
 	var wg sync.WaitGroup
 
-	psk := p2pnode.PNetSecret()
+	psk := PNetSecret()
 
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
-	rel := NewRelayer(context.Background(), p2pnode.NewConfig(priv, psk, nil), nil)
-	defer rel.Close()
+	rel := NewRelayer(context.Background(), NewConfig(priv, psk, nil), nil)
+	go AutoClose(rel.Context(), rel)
+
 	rel.DHT().Bootstrap(context.Background())
 	relInfo := peer.AddrInfo{
 		ID:    rel.Host().ID(),
@@ -37,11 +36,11 @@ func TestRelayer(t *testing.T) {
 
 	addr1, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/3031")
 	n1 := newNode(psk, []multiaddr.Multiaddr{addr1})
-	defer n1.Close()
+	go AutoClose(rel.Context(), n1)
 
 	wg.Add(1)
 	go func() {
-		conns := p2pnode.Connect(n1, []peer.AddrInfo{relInfo}, true)
+		conns := Connect(n1, []peer.AddrInfo{relInfo}, true)
 		for conn := range conns {
 			log.Println("new connection "+conn.Info.ID.String()+", error: ", conn.Error)
 		}
@@ -51,7 +50,8 @@ func TestRelayer(t *testing.T) {
 
 	addr2, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/3032")
 	n2 := newNode(psk, []multiaddr.Multiaddr{addr2})
-	defer n1.Close()
+	go AutoClose(n2.Context(), n2)
+
 	n2.Host().SetStreamHandler("/hello", func(s network.Stream) {
 		wg.Done()
 		s.Close()
@@ -59,7 +59,7 @@ func TestRelayer(t *testing.T) {
 	// n2 -> rel
 	wg.Add(1)
 	go func() {
-		conns := p2pnode.Connect(n2, []peer.AddrInfo{relInfo}, true)
+		conns := Connect(n2, []peer.AddrInfo{relInfo}, true)
 		for conn := range conns {
 			log.Println("new connection "+conn.Info.ID.String()+", error: ", conn.Error)
 		}
@@ -71,7 +71,7 @@ func TestRelayer(t *testing.T) {
 	n2relayInfo := CircuitRelayAddrInfo(rel.Host().ID(), n2.Host().ID())
 	wg.Add(1)
 	go func() {
-		conns := p2pnode.Connect(n1, []peer.AddrInfo{n2relayInfo}, false)
+		conns := Connect(n1, []peer.AddrInfo{n2relayInfo}, false)
 		for conn := range conns {
 			log.Println("new connection "+conn.Info.ID.String()+", error: ", conn.Error)
 		}
@@ -86,9 +86,9 @@ func TestRelayer(t *testing.T) {
 	wg.Wait()
 }
 
-func newNode(psk pnet.PSK, addrs []multiaddr.Multiaddr) p2pnode.LibP2PNode {
+func newNode(psk pnet.PSK, addrs []multiaddr.Multiaddr) LibP2PNode {
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
-	ropts := p2pnode.NewConfig(priv, psk, nil)
+	ropts := NewConfig(priv, psk, nil)
 	ropts.Addrs = addrs
-	return p2pnode.NewBaseNode(context.Background(), ropts, nil, libp2p.EnableRelay())
+	return NewBaseNode(context.Background(), ropts, nil, libp2p.EnableRelay())
 }

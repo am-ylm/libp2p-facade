@@ -11,7 +11,6 @@ import (
 	"syscall"
 
 	p2pnode "github.com/amirylm/priv-libp2p-node/core"
-	p2prelay "github.com/amirylm/priv-libp2p-node/relay"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -19,7 +18,7 @@ import (
 )
 
 func startRelayer(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) p2pnode.LibP2PNode {
-	rel := p2prelay.NewRelayer(context.Background(), p2pnode.NewConfig(priv, psk, nil))
+	rel := p2pnode.NewRelayer(context.Background(), p2pnode.NewConfig(priv, psk, nil), nil)
 
 	conns := p2pnode.Connect(rel, peers, true)
 	for conn := range conns {
