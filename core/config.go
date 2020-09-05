@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"github.com/ipfs/go-datastore"
+	dssync "github.com/ipfs/go-datastore/sync"
 	"github.com/ipfs/go-ipns"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
@@ -63,10 +64,11 @@ type Config struct {
 }
 
 // NewConfig creates the minimum needed Config
-func NewConfig(priv crypto.PrivKey, psk pnet.PSK) *Config {
+func NewConfig(priv crypto.PrivKey, psk pnet.PSK, store datastore.Batching) *Config {
 	opts := Config{
 		PrivKey: priv,
 		Secret:  psk,
+		DS: store,
 	}
 	return &opts
 }
@@ -100,6 +102,9 @@ func (cfg *Config) defaults() error {
 	}
 	if cfg.Secret == nil {
 		cfg.Secret = PNetSecret()
+	}
+	if cfg.DS == nil {
+		cfg.DS = dssync.MutexWrap(datastore.NewMapDatastore())
 	}
 	if cfg.Addrs == nil || len(cfg.Addrs) == 0 {
 		// currently using libp2p defaults, might be changed

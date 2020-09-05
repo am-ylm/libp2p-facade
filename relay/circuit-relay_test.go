@@ -27,7 +27,7 @@ func TestRelayer(t *testing.T) {
 	psk := p2pnode.PNetSecret()
 
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
-	rel := NewRelayer(context.Background(), p2pnode.NewConfig(priv, psk), nil)
+	rel := NewRelayer(context.Background(), p2pnode.NewConfig(priv, psk, nil), nil)
 	defer rel.Close()
 	rel.DHT().Bootstrap(context.Background())
 	relInfo := peer.AddrInfo{
@@ -88,7 +88,7 @@ func TestRelayer(t *testing.T) {
 
 func newNode(psk pnet.PSK, addrs []multiaddr.Multiaddr) p2pnode.LibP2PNode {
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
-	ropts := p2pnode.NewConfig(priv, psk)
+	ropts := p2pnode.NewConfig(priv, psk, nil)
 	ropts.Addrs = addrs
 	return p2pnode.NewBaseNode(context.Background(), ropts, nil, libp2p.EnableRelay())
 }

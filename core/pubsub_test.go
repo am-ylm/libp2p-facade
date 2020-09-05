@@ -64,7 +64,7 @@ func TestPubSubEmitter(t *testing.T) {
 }
 
 func createNode(psk pnet.PSK, onPeerFound OnPeerFound) *BaseNode {
-	n := NewBaseNode(context.Background(), NewConfig(nil, psk), NewDiscoveryConfig(onPeerFound))
+	n := NewBaseNode(context.Background(), NewConfig(nil, psk, nil), NewDiscoveryConfig(onPeerFound))
 	log.Printf("new node: %s", n.Host().ID().Pretty())
 	Connect(n, []peer.AddrInfo{}, true)
 	return n

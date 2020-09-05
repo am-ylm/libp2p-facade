@@ -19,7 +19,7 @@ import (
 )
 
 func startRelayer(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) p2pnode.LibP2PNode {
-	rel := p2prelay.NewRelayer(context.Background(), p2pnode.NewConfig(priv, psk))
+	rel := p2prelay.NewRelayer(context.Background(), p2pnode.NewConfig(priv, psk, nil))
 
 	conns := p2pnode.Connect(rel, peers, true)
 	for conn := range conns {
