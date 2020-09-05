@@ -14,7 +14,7 @@ import (
 type LibP2PNode interface {
 	Context() context.Context
 
-	Close() error
+	Closeable
 
 	PrivKey() crypto.PrivKey
 	Psk() pnet.PSK
@@ -26,6 +26,17 @@ type LibP2PNode interface {
 	PubSuber
 
 	Logger() logging.EventLogger
+}
+
+type Closeable interface {
+	Close() error
+}
+
+func AutoClose(ctx context.Context, c Closeable) {
+	select {
+	case <-ctx.Done():
+		c.Close()
+	}
 }
 
 func Close(node LibP2PNode) []error {

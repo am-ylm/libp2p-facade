@@ -1,4 +1,4 @@
-package relay
+package core
 
 import (
 	"context"
@@ -9,21 +9,19 @@ import (
 	circuit "github.com/libp2p/go-libp2p-circuit"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
-
-	p2pnode "github.com/amirylm/priv-libp2p-node/core"
 )
 
-var defaultConnectionConfig = p2pnode.ConnManagerConfig{
+var defaultRelayConnectionConfig = ConnManagerConfig{
 	200, 1000, time.Minute,
 }
 
 // NewRelayer creates an instance of NewBaseNode with the needed configuration to be a circuit-relay node
-func NewRelayer(ctx context.Context, cfg *p2pnode.Config, opts ...libp2p.Option) p2pnode.LibP2PNode {
+func NewRelayer(ctx context.Context, cfg *Config, disc *DiscoveryConfig, opts ...libp2p.Option) LibP2PNode {
 	if cfg.ConnManagerConfig == nil {
-		cfg.ConnManagerConfig = &defaultConnectionConfig
+		cfg.ConnManagerConfig = &defaultRelayConnectionConfig
 	}
 	opts = append(opts, libp2p.EnableRelay(circuit.OptHop))
-	return p2pnode.NewBaseNode(ctx, cfg, p2pnode.NewDiscoveryConfig(nil), opts...)
+	return NewBaseNode(ctx, cfg, disc, opts...)
 }
 
 // CircuitRelayAddr construct a circuit relay address of the given relay and target peer

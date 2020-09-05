@@ -21,11 +21,6 @@ func TestPubSubEmitter(t *testing.T) {
 	if nodes == nil {
 		assert.FailNow(t, "could not setup nodes")
 	}
-	defer func() {
-		for _, node := range nodes {
-			node.Close()
-		}
-	}()
 	assert.Equal(t, n, len(nodes))
 
 	log.Println("after discovery")
@@ -87,6 +82,7 @@ func setupNodesGroup(n int, psk pnet.PSK) ([]*BaseNode, error) {
 		if node == nil {
 			return nil, errors.New("could not create node")
 		}
+		go AutoClose(node.Context(), node)
 		nodes = append(nodes, node)
 		peers = append(peers, peer.AddrInfo{node.Host().ID(), node.Host().Addrs()})
 	}
