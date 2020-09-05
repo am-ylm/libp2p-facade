@@ -18,7 +18,7 @@ import (
 
 func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (p2pnode.LibP2PNode, error) {
 	node := p2pnode.NewBaseNode(context.Background(),
-		p2pnode.NewConfig(priv, psk),
+		p2pnode.NewConfig(priv, psk, nil),
 		p2pnode.NewDiscoveryConfig(nil),
 		libp2p.EnableRelay(),
 	)
