@@ -2,7 +2,7 @@
 
 **WIP**
 
-Libp2p private-network node abstraction, it hides a recipe of libp2p's common protocols and concepts 
+Libp2p node abstraction, it encapsulates a recipe of libp2p's common protocols / concepts 
 (pubsub, dht, ipld, etc...).
 
 Inspired by [ipfs-lite](https://github.com/hsanjuan/ipfs-lite), which is an alternative to a full IPFS, 
@@ -24,6 +24,8 @@ As a library:
 ```bash
 go get github.com/amirylm/priv-libp2p-node
 ```
+
+Libp2p version -> `github.com/libp2p/go-libp2p@v0.11.0`
 
 ## Usage
 
