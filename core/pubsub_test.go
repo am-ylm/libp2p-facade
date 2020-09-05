@@ -19,7 +19,7 @@ func TestPubSubEmitter(t *testing.T) {
 	nodes, err := setupNodesGroup(n, psk)
 	assert.Nil(t, err)
 	if nodes == nil {
-		assert.Fail(t, "could not setup nodes")
+		assert.FailNow(t, "could not setup nodes")
 	}
 	defer func() {
 		for _, node := range nodes {
@@ -63,10 +63,10 @@ func TestPubSubEmitter(t *testing.T) {
 	pswg.Wait()
 }
 
-func createNode(psk pnet.PSK, onPeerFound OnPeerFound) *BaseNode {
+func createNode(psk pnet.PSK, onPeerFound OnPeerFound, peers []peer.AddrInfo) *BaseNode {
 	n := NewBaseNode(context.Background(), NewConfig(nil, psk, nil), NewDiscoveryConfig(onPeerFound))
 	log.Printf("new node: %s", n.Host().ID().Pretty())
-	Connect(n, []peer.AddrInfo{}, true)
+	Connect(n, peers, true)
 	return n
 }
 
@@ -76,17 +76,19 @@ func setupNodesGroup(n int, psk pnet.PSK) ([]*BaseNode, error) {
 
 	onPeerFound := OnPeerFoundWaitGroup(&discwg)
 	nodes := []*BaseNode{}
+	peers := []peer.AddrInfo{}
 	timeout := time.After(6 * time.Second)
 	discovered := make(chan bool)
 
 	i := n
 	for i > 0 {
 		i--
-		node := createNode(psk, onPeerFound)
+		node := createNode(psk, onPeerFound, peers)
 		if node == nil {
 			return nil, errors.New("could not create node")
 		}
 		nodes = append(nodes, node)
+		peers = append(peers, peer.AddrInfo{node.Host().ID(), node.Host().Addrs()})
 	}
 
 	go func() {

@@ -26,6 +26,7 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.3.5
 	github.com/libp2p/go-libp2p-record v0.1.3
 	github.com/libp2p/go-libp2p-secio v0.2.2
+	github.com/libp2p/go-libp2p-tls v0.1.3
 	github.com/libp2p/go-mplex v0.1.3 // indirect
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect
 	github.com/libp2p/go-yamux v1.3.8 // indirect

@@ -16,6 +16,7 @@ import (
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	record "github.com/libp2p/go-libp2p-record"
 	secio "github.com/libp2p/go-libp2p-secio"
+	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	"github.com/multiformats/go-multiaddr"
 	"time"
 )
@@ -87,7 +88,7 @@ func (cfg *Config) ToLibP2pOpts(customOpts ...libp2p.Option) ([]libp2p.Option, e
 		libp2p.EnableAutoRelay(),
 		libp2p.EnableNATService(),
 		libp2p.ConnectionManager(connmgr.NewConnManager(cfg.ConnManagerConfig.Low, cfg.ConnManagerConfig.High, cfg.ConnManagerConfig.Grace)),
-		//libp2p.Security(libp2ptls.ID, libp2ptls.New),
+		libp2p.Security(libp2ptls.ID, libp2ptls.New),
 		libp2p.Security(secio.ID, secio.New),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
