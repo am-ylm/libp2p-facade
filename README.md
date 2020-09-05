@@ -27,7 +27,7 @@ package main
 import (
     "log"
 
-	p2pnode "github.com/amirylm/priv-libp2p-node/lib"
+	p2pnode "github.com/amirylm/priv-libp2p-node/core"
 	
 	"github.com/libp2p/go-libp2p"
 	connmgr "github.com/libp2p/go-libp2p-connmgr"

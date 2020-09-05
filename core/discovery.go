@@ -1,4 +1,4 @@
-package lib
+package core
 
 import (
 	"context"
@@ -21,32 +21,31 @@ const DefaultDiscoveryServiceTag = "pnet:pubsub"
 // in case it returns false, this node won't connect to the given peer
 type OnPeerFound = func(pi peer.AddrInfo) bool
 
-// DiscoveryOptions
-type DiscoveryOptions struct {
+// DiscoveryConfig
+type DiscoveryConfig struct {
 	OnPeerFound OnPeerFound
 	ServiceTag  string
 	Interval    time.Duration
 	Services    []discovery.Service
-	Ctx         context.Context
 }
 
-// NewDiscoveryOptions creates a default options object
-func NewDiscoveryOptions(onPeerFound OnPeerFound) *DiscoveryOptions {
+// NewDiscoveryConfig creates a new discovery config object with defaults
+func NewDiscoveryConfig(onPeerFound OnPeerFound) *DiscoveryConfig {
 	if onPeerFound == nil {
 		onPeerFound = func(pi peer.AddrInfo) bool {
 			return true
 		}
 	}
-	opts := DiscoveryOptions{
+	opts := DiscoveryConfig{
 		onPeerFound,
 		DefaultDiscoveryServiceTag,
 		DefaultDiscoveryInterval,
 		[]discovery.Service{},
-		context.Background(),
 	}
 	return &opts
 }
 
+// OnPeerFoundWaitGroup creates an OnPeerFound that triggers a WaitGroup
 func OnPeerFoundWaitGroup(wg *sync.WaitGroup) OnPeerFound {
 	return func(pi peer.AddrInfo) bool {
 		go func() {
@@ -63,20 +62,20 @@ func OnPeerFoundWaitGroup(wg *sync.WaitGroup) OnPeerFound {
 	}
 }
 
-// configureDiscovery binds mDNS discovery services
-func configureDiscovery(opts *DiscoveryOptions, h host.Host) error {
+// ConfigureDiscovery binds mDNS discovery services
+func ConfigureDiscovery(ctx context.Context, h host.Host, opts *DiscoveryConfig) error {
 	discoveryServices := opts.Services
 
 	// setup default mDNS discovery to find local peers
-	disc, err := discovery.NewMdnsService(context.Background(), h, opts.Interval, opts.ServiceTag)
+	disc, err := discovery.NewMdnsService(ctx, h, opts.Interval, opts.ServiceTag)
 	// if couldn't setup local mDNS and no other service was provided -> exit
 	if err != nil && len(discoveryServices) == 0 {
 		return err
 	}
 	discoveryServices = append(discoveryServices, disc)
 
+	n := discoveryNotifee{h, ctx, opts.OnPeerFound}
 	for _, disc := range discoveryServices {
-		n := discoveryNotifee{h, opts.Ctx, opts.OnPeerFound}
 		disc.RegisterNotifee(&n)
 	}
 
