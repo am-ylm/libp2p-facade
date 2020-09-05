@@ -2,17 +2,18 @@ package ipld
 
 import (
 	"context"
+	"errors"
 	"github.com/amirylm/priv-libp2p-node/core"
 	"github.com/ipfs/go-bitswap"
 	"github.com/ipfs/go-bitswap/network"
+	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	exoffline "github.com/ipfs/go-ipfs-exchange-offline"
+	provider "github.com/ipfs/go-ipfs-provider"
 	"github.com/ipfs/go-ipfs-provider/queue"
 	"github.com/ipfs/go-ipfs-provider/simple"
 	ipld "github.com/ipfs/go-ipld-format"
-	provider "github.com/ipfs/go-ipfs-provider"
-	"github.com/ipfs/go-blockservice"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/go-merkledag"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -31,40 +32,43 @@ const (
 type IpldNode interface {
 	core.LibP2PNode
 
-	DAGService() ipld.DAGService
+	DagService() ipld.DAGService
 	BlockService() blockservice.BlockService
 	Reprovider() provider.System
 }
 
 type ipldNode struct {
-	base core.LibP2PNode
+	ipld.DAGService
+
+	base *core.BaseNode
 
 	bsrv       blockservice.BlockService
-	dag        ipld.DAGService
 	reprovider provider.System
 }
 
-func NewIpldNode(base core.LibP2PNode, offline bool) IpldNode {
-	dag, bsrv, bstore, err := createDagServices(base, offline)
+func NewIpldNode(base *core.BaseNode, offline bool) IpldNode {
+	if offline {
+		dag, bsrv, _, _ := CreateOfflineDagServices(base)
+		repro := provider.NewOfflineProvider()
+		node := ipldNode{dag, base, bsrv, repro}
+		return &node
+	}
+	dag, bsrv, bstore, err := CreateDagServices(base)
 	if err != nil {
 		log.Panic("could not create DAG services")
 	}
-	repro, err := setupReprovider(base, bstore, defaultReprovideInterval, offline)
-	node := ipldNode{base, bsrv, dag, repro}
+	repro, err := SetupReprovider(base, bstore, defaultReprovideInterval)
+	node := ipldNode{dag, base, bsrv, repro}
 	return &node
 }
 
-func createDagServices(base core.LibP2PNode, offline bool) (ipld.DAGService, blockservice.BlockService, blockstore.Blockstore, error) {
+func CreateDagServices(base core.LibP2PNode) (ipld.DAGService, blockservice.BlockService, blockstore.Blockstore, error) {
 	var bsrv blockservice.BlockService
 	var bs blockstore.Blockstore
 
 	bs = blockstore.NewBlockstore(base.Store())
 	bs = blockstore.NewIdStore(bs)
 	bs, _ = blockstore.CachedBlockstore(base.Context(), bs, blockstore.DefaultCacheOpts())
-	if offline {
-		bsrv = blockservice.New(bs, exoffline.Exchange(bs))
-		return merkledag.NewDAGService(bsrv), bsrv, bs, nil
-	}
 
 	bswapnet := network.NewFromIpfsHost(base.Host(), base.DHT())
 	bswap := bitswap.New(base.Context(), bswapnet, bs)
@@ -73,11 +77,17 @@ func createDagServices(base core.LibP2PNode, offline bool) (ipld.DAGService, blo
 	return merkledag.NewDAGService(bsrv), bsrv, bs, nil
 }
 
-func setupReprovider(base core.LibP2PNode, bstore blockstore.Blockstore, reprovideInterval time.Duration, offline bool) (provider.System, error) {
-	if offline {
-		return provider.NewOfflineProvider(), nil
-	}
+func CreateOfflineDagServices(base core.LibP2PNode) (ipld.DAGService, blockservice.BlockService, blockstore.Blockstore, error) {
+	bs := blockstore.NewBlockstore(base.Store())
+	bs = blockstore.NewIdStore(bs)
+	bs, _ = blockstore.CachedBlockstore(base.Context(), bs, blockstore.DefaultCacheOpts())
 
+	bsrv := blockservice.New(bs, exoffline.Exchange(bs))
+
+	return merkledag.NewDAGService(bsrv), bsrv, bs, nil
+}
+
+func SetupReprovider(base core.LibP2PNode, bstore blockstore.Blockstore, reprovideInterval time.Duration) (provider.System, error) {
 	queue, err := queue.NewQueue(base.Context(), "repro", base.Store())
 	if err != nil {
 		return nil, err
@@ -104,15 +114,16 @@ func setupReprovider(base core.LibP2PNode, bstore blockstore.Blockstore, reprovi
 
 // Session returns a session-based NodeGetter.
 func Session(node IpldNode) ipld.NodeGetter {
-	ng := merkledag.NewSession(node.Context(), node.DAGService())
-	if ng == node.DAGService() {
+	dag := node.DagService()
+	ng := merkledag.NewSession(node.Context(), dag)
+	if ng == dag {
 		node.Logger().Warn("DAGService does not support sessions")
 	}
 	return ng
 }
 
-func (n *ipldNode) DAGService() ipld.DAGService {
-	return n.dag
+func (n *ipldNode) DagService() ipld.DAGService {
+	return n
 }
 
 func (n *ipldNode) BlockService() blockservice.BlockService {
@@ -128,7 +139,21 @@ func (n *ipldNode) Context() context.Context {
 }
 
 func (n *ipldNode) Close() error {
-	return n.base.Close()
+	errs := []error{}
+
+	if err := n.reprovider.Close(); err != nil {
+		errs = append(errs, err)
+	}
+	if err := n.bsrv.Close(); err != nil {
+		errs = append(errs, err)
+	}
+
+	baseErr := n.base.Close()
+
+	if len(errs) == 0 {
+		return baseErr
+	}
+	return errors.New("could not close ipld node")
 }
 
 func (n *ipldNode) PrivKey() crypto.PrivKey {
