@@ -2,11 +2,20 @@
 
 **WIP**
 
-Libp2p private-network node abstraction, it hides a recipe of libp2p's common protocols and concepts (secio/tls, dht, mux, etc...).
+Libp2p private-network node abstraction, it hides a recipe of libp2p's common protocols and concepts 
+(pubsub, dht, ipld, etc...).
 
-The library contains a basic libp2p node, with some pre-defined recipe of protocols and options to launch a private libp2p network.
-Libp2p config can be extended with a custom options hook.  
-In addition, there is a [circuit-relay](https://docs.libp2p.io/concepts/circuit-relay/) node, which can be extended similarly to the basic node.
+Inspired by [ipfs-lite](https://github.com/hsanjuan/ipfs-lite), which is an alternative to a full IPFS, 
+and comes by default with IPLD (DAGService).
+
+This package makes it easy to configure several types of libp2p nodes:
+- LibP2PNode (`./core/node.go`) is the most minimal interface
+    - local datastore, DHT, pubsub
+    - a [circuit-relay](https://docs.libp2p.io/concepts/circuit-relay/) node is an example (see `./cmd/relayer`)
+- IpldNode (`./ipld/ipld_node.go`) - LibP2PNode + IPLD, i.e. more similar to ipfs-lite
+    - it is a [ipld.DAGService](https://godoc.org/github.com/ipfs/go-ipld-format#DAGService)
+    - [crdt](https://github.com/ipfs/go-ds-crdt) 
+    could be configured easily to provide state consistency
 
 ## Install
 
@@ -15,7 +24,6 @@ As a library:
 ```bash
 go get github.com/amirylm/priv-libp2p-node
 ```
-
 
 ## Usage
 
@@ -29,29 +37,23 @@ import (
 
 	p2pnode "github.com/amirylm/priv-libp2p-node/core"
 	
-	"github.com/libp2p/go-libp2p"
-	connmgr "github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 )
 
-func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (*p2pnode.PrivateNetNode, error) {
-	nopts := p2pnode.NewOptions(priv, psk)
-	nopts.Libp2pOpts = func() ([]libp2p.Option, error) {
-		return []libp2p.Option{
-			libp2p.EnableRelay(),
-			libp2p.ConnectionManager(connmgr.NewConnManager(10, 50, p2pnode.ConnectionsGrace)),
-		}, nil
-	}
-	node, _ := p2pnode.NewPrivateNetNode(nopts)
+func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (p2pnode.LibP2PNode, error) {
+    node := p2pnode.NewBaseNode(context.Background(),
+		p2pnode.NewConfig(priv, psk, nil),
+		p2pnode.NewDiscoveryConfig(nil),
+	)
 
-	conns := node.ConnectToPeers(peers, true)
+	conns := p2pnode.Connect(node, peers, true)
 	for conn := range conns {
 		if conn.Error != nil {
-			log.Printf("could not connect to %s", conn.ID)
+			log.Printf("could not connect to %s", conn.Info.ID)
 		} else {
-			log.Printf("connected to %s", conn.ID)
+			log.Printf("connected to %s", conn.Info.ID)
 		}
 	}
 
