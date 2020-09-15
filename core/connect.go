@@ -20,6 +20,9 @@ type PeerConnection struct {
 	Time  int64
 }
 
+// Connect will try to connect to each of the given peer
+// a channel is used to publish connection result.
+// the dht should be bootstrapped if the is the first connect of a node
 func Connect(node LibP2PNode, peers []peer.AddrInfo, bootDht bool) chan PeerConnection {
 	connChannel := make(chan PeerConnection)
 	var wg sync.WaitGroup
