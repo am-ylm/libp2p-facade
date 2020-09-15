@@ -2,12 +2,16 @@ package core
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"log"
 	"math/rand"
+	"os"
 
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
 )
 
 // PNetSecret creates a new random secret
@@ -26,6 +30,44 @@ func SerializeAddrInfo(info peer.AddrInfo) string {
 func SerializePeer(h host.Host) string {
 	pi := peer.AddrInfo{h.ID(), h.Addrs()}
 	return SerializeAddrInfo(pi)
+}
+
+func PrivKey(keyPath string) crypto.PrivKey {
+	var priv crypto.PrivKey
+	if len(keyPath) == 0 { // will not be persisted
+		priv, _, err := crypto.GenerateKeyPair(crypto.Ed25519, 1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return priv
+	}
+	_, err := os.Stat(keyPath)
+	if os.IsNotExist(err) {
+		priv, _, err = crypto.GenerateKeyPair(crypto.Ed25519, 1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		data, err := crypto.MarshalPrivateKey(priv)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = ioutil.WriteFile(keyPath, data, 0400)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if err == nil {
+		log.Fatal(err)
+	} else {
+		key, err := ioutil.ReadFile(keyPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		priv, err = crypto.UnmarshalPrivateKey(key)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	return priv
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
