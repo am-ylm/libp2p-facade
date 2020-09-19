@@ -27,7 +27,7 @@ go get github.com/amirylm/priv-libp2p-node
 
 ## Usage
 
-See `./cmd` folder and tests for more concrete examples.
+See tests for more examples.
 
 ```go
 package main

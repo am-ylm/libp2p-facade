@@ -7,7 +7,6 @@ import (
 	"github.com/ipfs/go-bitswap"
 	"github.com/ipfs/go-bitswap/network"
 	"github.com/ipfs/go-blockservice"
-	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	exoffline "github.com/ipfs/go-ipfs-exchange-offline"
@@ -126,12 +125,6 @@ func Session(node IpldNode) ipld.NodeGetter {
 func (n *ipldNode) DagService() ipld.DAGService {
 	return n
 }
-// HasBlock returns whether a given block is available locally
-// if missing - crdt shows build error
-func (n *ipldNode) HasBlock(c cid.Cid) (bool, error) {
-	return n.BlockService().Blockstore().Has(c)
-}
-
 
 func (n *ipldNode) BlockService() blockservice.BlockService {
 	return n.bsrv

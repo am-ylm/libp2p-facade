@@ -31,14 +31,14 @@ type BaseNode struct {
 	logger logging.EventLogger
 }
 
-func NewBaseNode(ctx context.Context, cfg *Config, discovery *DiscoveryConfig, opts ...libp2p.Option) *BaseNode {
+func NewBaseNode(ctx context.Context, cfg *Config, discoveryCfg *DiscoveryConfig, opts ...libp2p.Option) *BaseNode {
 	h, idht, err := NewBaseLibP2P(ctx, cfg, opts...)
 	if err != nil {
 		log.Panic("could not setup node")
 	}
 	var ps *pubsub.PubSub
-	if discovery != nil {
-		err = ConfigureDiscovery(ctx, h, discovery)
+	if discoveryCfg != nil {
+		err = ConfigureDiscovery(ctx, h, discoveryCfg)
 		if err == nil {
 			ps, err = pubsub.NewGossipSub(ctx, h)
 		}

@@ -28,10 +28,12 @@ type LibP2PNode interface {
 	Logger() logging.EventLogger
 }
 
+// Closeable represent an object the can be closed
 type Closeable interface {
 	Close() error
 }
 
+// AutoClose closes the given Closeable once the context is done
 func AutoClose(ctx context.Context, c Closeable) {
 	select {
 	case <-ctx.Done():
@@ -39,6 +41,8 @@ func AutoClose(ctx context.Context, c Closeable) {
 	}
 }
 
+// Close closes the underlying host, dht and possibly other services (e.g. store, pubsub)
+// returns an array to be compatible with multiple closes
 func Close(node LibP2PNode) []error {
 	all := []error{
 		node.DHT().Close(),
