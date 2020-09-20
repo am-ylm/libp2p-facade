@@ -28,6 +28,7 @@ const (
 	defaultReprovideInterval = 8 * time.Hour
 )
 
+//
 type StoragePeer interface {
 	core.LibP2PPeer
 

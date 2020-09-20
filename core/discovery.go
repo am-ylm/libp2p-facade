@@ -56,7 +56,7 @@ func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	onPeerFound := OnPeerFoundWaitGroup(&discwg)
 	nodes := []LibP2PPeer{}
 	peers := []peer.AddrInfo{}
-	timeout := time.After(6 * time.Second)
+	timeout := time.After(5 * time.Second)
 	discovered := make(chan bool, 1)
 
 	i := n

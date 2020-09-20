@@ -31,7 +31,7 @@ func TestStorageNodeOffline(t *testing.T) {
 func TestStorageNode(t *testing.T) {
 	psk := core.PNetSecret()
 	nodes, err := core.SetupGroup(3, func(peers []peer.AddrInfo, onPeerFound core.OnPeerFound) core.LibP2PPeer {
-		return newNode(psk, onPeerFound, peers)
+		return newStoragePeer(psk, onPeerFound, peers)
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(nodes))
@@ -58,7 +58,7 @@ func add(n StoragePeer, data string) (ipld.Node, error) {
 	return Add(n, []byte{}, r, cb, balanced.Layout)
 }
 
-func newNode(psk pnet.PSK, onPeerFound core.OnPeerFound, peers []peer.AddrInfo) StoragePeer {
+func newStoragePeer(psk pnet.PSK, onPeerFound core.OnPeerFound, peers []peer.AddrInfo) StoragePeer {
 	cfg := core.NewConfig(nil, psk, nil)
 	cfg.Discovery = core.NewDiscoveryConfig(onPeerFound)
 	base := core.NewBasePeer(context.Background(), cfg)
