@@ -36,7 +36,7 @@ func TestRelayer(t *testing.T) {
 
 	addr1, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/3031")
 	n1 := newNode(psk, []multiaddr.Multiaddr{addr1})
-	go AutoClose(rel.Context(), n1)
+	go AutoClose(n1.Context(), n1)
 
 	wg.Add(1)
 	go func() {
