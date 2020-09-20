@@ -3,10 +3,8 @@ package core
 import (
 	"bytes"
 	"context"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"sync"
 	"testing"
 	"time"
@@ -15,8 +13,8 @@ import (
 func TestPubSubEmitter(t *testing.T) {
 	n := 4
 	psk := PNetSecret()
-	nodes, err := SetupGroup(n, func(peers []peer.AddrInfo, onPeerFound OnPeerFound) LibP2PPeer {
-		node := newPubSubPeer(psk, onPeerFound, peers)
+	nodes, err := SetupGroup(n, func(onPeerFound OnPeerFound) LibP2PPeer {
+		node := newPubSubPeer(psk, onPeerFound)
 		return node
 	})
 	assert.Nil(t, err)
@@ -24,8 +22,6 @@ func TestPubSubEmitter(t *testing.T) {
 		assert.FailNow(t, "could not setup nodes")
 	}
 	assert.Equal(t, n, len(nodes))
-
-	log.Println("after discovery")
 
 	var pswg sync.WaitGroup
 	data := []byte("data:my-topic")
@@ -60,12 +56,11 @@ func TestPubSubEmitter(t *testing.T) {
 	pswg.Wait()
 }
 
-func newPubSubPeer(psk pnet.PSK, onPeerFound OnPeerFound, peers []peer.AddrInfo) *BasePeer {
+func newPubSubPeer(psk pnet.PSK, onPeerFound OnPeerFound) *BasePeer {
 	cfg := NewConfig(nil, psk, nil)
 	cfg.Discovery = NewDiscoveryConfig(onPeerFound)
 	n := NewBasePeer(context.Background(), cfg)
 	n.Logger().Infof("new peer: %s", n.Host().ID().Pretty())
-	Connect(n, peers, true)
 	return n
 }
 

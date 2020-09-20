@@ -46,9 +46,10 @@ func NewDiscoveryConfig(onPeerFound OnPeerFound) *DiscoveryConfig {
 	return &opts
 }
 
-type GroupNodeFactory func([]peer.AddrInfo, OnPeerFound) LibP2PPeer
+type GroupNodeFactory func(OnPeerFound) LibP2PPeer
 
 // SetupGroup will create a group of n local nodes that are connected to each other
+// used in tests
 func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	var discwg sync.WaitGroup
 	discwg.Add(n-1)
@@ -62,12 +63,13 @@ func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	i := n
 	for i > 0 {
 		i--
-		node := nodeFactory(peers, onPeerFound)
+		node := nodeFactory(onPeerFound)
 		if node == nil {
 			return nil, errors.New("could not create node")
 		}
 		go AutoClose(node.Context(), node)
 		nodes = append(nodes, node)
+		Connect(node, peers, true)
 		peers = append(peers, peer.AddrInfo{node.Host().ID(), node.Host().Addrs()})
 	}
 

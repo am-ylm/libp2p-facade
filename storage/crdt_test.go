@@ -6,7 +6,6 @@ import (
 	"github.com/amirylm/priv-libp2p-node/core"
 	ds "github.com/ipfs/go-datastore"
 	crdt "github.com/ipfs/go-ds-crdt"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -20,8 +19,8 @@ func TestIpldNodeWithCrdt(t *testing.T) {
 	topicName := "crdt-test"
 	psk := core.PNetSecret()
 
-	_, err := core.SetupGroup(3, func(peers []peer.AddrInfo, onPeerFound core.OnPeerFound) core.LibP2PPeer {
-		node, c, err := newCrdtNode(psk, onPeerFound, peers, topicName)
+	_, err := core.SetupGroup(3, func(onPeerFound core.OnPeerFound) core.LibP2PPeer {
+		node, c, err := newCrdtNode(psk, onPeerFound, topicName)
 		assert.Nil(t, err)
 		crdts = append(crdts, c)
 		return node
@@ -68,7 +67,7 @@ func TestIpldNodeWithCrdt(t *testing.T) {
 	assert.True(t, bytes.Equal(val1, state22))
 }
 
-func newCrdtNode(psk pnet.PSK, onPeerFound core.OnPeerFound, peers []peer.AddrInfo, crdtTopic string) (StoragePeer, *crdt.Datastore, error) {
+func newCrdtNode(psk pnet.PSK, onPeerFound core.OnPeerFound, crdtTopic string) (StoragePeer, *crdt.Datastore, error) {
 	cfg := core.NewConfig(nil, psk, nil)
 	cfg.Discovery = core.NewDiscoveryConfig(onPeerFound)
 	base := core.NewBasePeer(context.Background(), cfg)
@@ -78,7 +77,6 @@ func newCrdtNode(psk pnet.PSK, onPeerFound core.OnPeerFound, peers []peer.AddrIn
 	if err != nil {
 		return nil, nil, err
 	}
-	core.Connect(node, peers, true)
 	go core.AutoClose(node.Context(), c)
 	return node, c, nil
 }
