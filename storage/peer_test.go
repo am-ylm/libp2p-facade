@@ -6,7 +6,6 @@ import (
 	"github.com/amirylm/libp2p-facade/core"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-unixfs/importer/balanced"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/stretchr/testify/assert"
 	"testing"
