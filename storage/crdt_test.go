@@ -3,7 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
-	"github.com/amirylm/priv-libp2p-node/core"
+	"github.com/amirylm/libp2p-facade/core"
 	ds "github.com/ipfs/go-datastore"
 	crdt "github.com/ipfs/go-ds-crdt"
 	"github.com/libp2p/go-libp2p-core/pnet"

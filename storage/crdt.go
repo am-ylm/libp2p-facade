@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/amirylm/priv-libp2p-node/core"
+	"github.com/amirylm/libp2p-facade/core"
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	crdt "github.com/ipfs/go-ds-crdt"
@@ -46,4 +46,3 @@ type dagSyncer struct {
 func (n dagSyncer) HasBlock(c cid.Cid) (bool, error) {
 	return n.bs.Has(c)
 }
-

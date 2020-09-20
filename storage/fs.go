@@ -27,8 +27,8 @@ func init() {
 type layout = func(db *helpers.DagBuilderHelper) (ipld.Node, error)
 
 const (
-	Chunker string = ""
-	DefaultHashFunc = "sha2-256"
+	Chunker         string = ""
+	DefaultHashFunc        = "sha2-256"
 )
 
 func AddStream(node StoragePeer, k []byte, r io.Reader, hfunc string) (ipld.Node, error) {
@@ -44,9 +44,9 @@ func AddStream(node StoragePeer, k []byte, r io.Reader, hfunc string) (ipld.Node
 // returs the root ipld.Node
 func Add(node StoragePeer, k []byte, r io.Reader, cb cid.Builder, l layout) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
-		Dagserv:    node.DagService(),
+		Dagserv: node.DagService(),
 		//RawLeaves:  true,
-		Maxlinks:   helpers.DefaultLinksPerBlock,
+		Maxlinks: helpers.DefaultLinksPerBlock,
 		//NoCopy:     true,
 		CidBuilder: cb,
 	}

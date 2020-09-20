@@ -3,7 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
-	"github.com/amirylm/priv-libp2p-node/core"
+	"github.com/amirylm/libp2p-facade/core"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/libp2p/go-libp2p-core/peer"

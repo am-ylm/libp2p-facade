@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
-	"github.com/amirylm/priv-libp2p-node/core"
+	"github.com/amirylm/libp2p-facade/core"
 	"github.com/ipfs/go-bitswap"
 	"github.com/ipfs/go-bitswap/network"
 	"github.com/ipfs/go-blockservice"

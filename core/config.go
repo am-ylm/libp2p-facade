@@ -81,7 +81,7 @@ func NewConfig(priv crypto.PrivKey, psk pnet.PSK, store datastore.Batching) *Con
 	opts := Config{
 		PrivKey: priv,
 		Secret:  psk,
-		DS: store,
+		DS:      store,
 	}
 	return &opts
 }
@@ -135,7 +135,6 @@ func (cfg *Config) defaults() error {
 	}
 	return nil
 }
-
 
 func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*kaddht.IpfsDHT, error) {
 	dhtOpts := []kaddht.Option{

@@ -25,7 +25,7 @@ type BasePeer struct {
 	dht   *kaddht.IpfsDHT
 	store datastore.Batching
 
-	ps *pubsub.PubSub
+	ps     *pubsub.PubSub
 	topics map[string]*pubsub.Topic
 
 	logger logging.EventLogger

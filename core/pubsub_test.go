@@ -37,7 +37,7 @@ func TestPubSubEmitter(t *testing.T) {
 		}
 	}()
 
-	sub2, err := Subscribe(nodes[1],"other-topic")
+	sub2, err := Subscribe(nodes[1], "other-topic")
 	assert.Nil(t, err)
 	go func() {
 		for {
@@ -63,4 +63,3 @@ func newPubSubPeer(psk pnet.PSK, onPeerFound OnPeerFound) *BasePeer {
 	n.Logger().Infof("new peer: %s", n.Host().ID().Pretty())
 	return n
 }
-

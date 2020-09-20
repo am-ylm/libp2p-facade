@@ -52,7 +52,7 @@ type GroupNodeFactory func(OnPeerFound) LibP2PPeer
 // used in tests
 func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	var discwg sync.WaitGroup
-	discwg.Add(n-1)
+	discwg.Add(n - 1)
 
 	onPeerFound := OnPeerFoundWaitGroup(&discwg)
 	nodes := []LibP2PPeer{}
@@ -84,7 +84,7 @@ func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	case <-discovered:
 		{
 			actualPeers := nodes[0].Host().Peerstore().Peers()
-			if len(actualPeers) < n - 1 {
+			if len(actualPeers) < n-1 {
 				return nil, errors.New("could not connect to all peers")
 			}
 		}
@@ -133,7 +133,7 @@ type discoveryNotifee struct {
 	h           host.Host
 	ctx         context.Context
 	onPeerFound OnPeerFound
-	logger logging.EventLogger
+	logger      logging.EventLogger
 }
 
 // HandlePeerFound connects to peers discovered via mDNS. Once they're connected,
