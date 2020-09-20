@@ -43,13 +43,13 @@ import (
 	"github.com/libp2p/go-libp2p-core/pnet"
 )
 
-func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (p2pfacade.LibP2PNode, error) {
-    node := p2pfacade.NewBaseNode(context.Background(),
+func startPeer(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (p2pfacade.LibP2PPeer, error) {
+    p := p2pfacade.NewBasePeer(context.Background(),
 		p2pfacade.NewConfig(priv, psk, nil),
 		p2pfacade.NewDiscoveryConfig(nil),
 	)
 
-	conns := p2pfacade.Connect(node, peers, true)
+	conns := p2pfacade.Connect(p, peers, true)
 	for conn := range conns {
 		if conn.Error != nil {
 			log.Printf("could not connect to %s", conn.Info.ID)
@@ -58,11 +58,11 @@ func startNode(psk pnet.PSK, priv crypto.PrivKey, peers []peer.AddrInfo) (p2pfac
 		}
 	}
 
-	return node, nil
+	return p, nil
 }
 
 func main() {
-    startNode(nil, nil, []peer.AddrInfo{})
+    startPeer(nil, nil, []peer.AddrInfo{})
     // ...
 }
 ``` 
