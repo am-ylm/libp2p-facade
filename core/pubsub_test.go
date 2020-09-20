@@ -23,6 +23,8 @@ func TestPubSubEmitter(t *testing.T) {
 	}
 	assert.Equal(t, n, len(nodes))
 
+	time.Sleep(time.Millisecond * 500)
+
 	var pswg sync.WaitGroup
 	data := []byte("data:my-topic")
 	pswg.Add(1)

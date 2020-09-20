@@ -9,6 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestStorageNodeOffline(t *testing.T) {
@@ -34,6 +35,8 @@ func TestStorageNode(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(nodes))
+
+	time.Sleep(time.Millisecond * 500)
 
 	// add value in first node
 	n1 := nodes[0].(StoragePeer)
