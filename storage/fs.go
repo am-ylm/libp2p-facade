@@ -1,4 +1,4 @@
-package ipld
+package storage
 
 import (
 	"fmt"
@@ -27,11 +27,11 @@ func init() {
 type layout = func(db *helpers.DagBuilderHelper) (ipld.Node, error)
 
 const (
-	Chunker string = ""
-	DefaultHashFunc = "sha2-256"
+	Chunker         string = ""
+	DefaultHashFunc        = "sha2-256"
 )
 
-func AddStream(node IpldNode, k []byte, r io.Reader, hfunc string) (ipld.Node, error) {
+func AddStream(node StoragePeer, k []byte, r io.Reader, hfunc string) (ipld.Node, error) {
 	prefix, err := cidBuilder(hfunc)
 	if err != nil {
 		return nil, err
@@ -42,11 +42,11 @@ func AddStream(node IpldNode, k []byte, r io.Reader, hfunc string) (ipld.Node, e
 // Add chunks and adds content to the DAGService from a reader.
 // Data is stored as a UnixFS DAG (default for IPFS).
 // returs the root ipld.Node
-func Add(node IpldNode, k []byte, r io.Reader, cb cid.Builder, l layout) (ipld.Node, error) {
+func Add(node StoragePeer, k []byte, r io.Reader, cb cid.Builder, l layout) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
-		Dagserv:    node.DagService(),
+		Dagserv: node.DagService(),
 		//RawLeaves:  true,
-		Maxlinks:   helpers.DefaultLinksPerBlock,
+		Maxlinks: helpers.DefaultLinksPerBlock,
 		//NoCopy:     true,
 		CidBuilder: cb,
 	}
@@ -70,7 +70,7 @@ func Add(node IpldNode, k []byte, r io.Reader, cb cid.Builder, l layout) (ipld.N
 }
 
 // Get returns a reader to a file (must be a UnixFS DAG) as identified by its root CID.
-func Get(node IpldNode, c cid.Cid) (ufsio.ReadSeekCloser, error) {
+func Get(node StoragePeer, c cid.Cid) (ufsio.ReadSeekCloser, error) {
 	dag := node.DagService()
 	n, err := dag.Get(node.Context(), c)
 	if err != nil {
@@ -80,7 +80,7 @@ func Get(node IpldNode, c cid.Cid) (ufsio.ReadSeekCloser, error) {
 }
 
 // Get returns a reader to a file (must be a UnixFS DAG) as identified by its root CID.
-func GetBytes(node IpldNode, c cid.Cid) ([]byte, error) {
+func GetBytes(node StoragePeer, c cid.Cid) ([]byte, error) {
 	rsc, err := Get(node, c)
 	defer rsc.Close()
 	if err != nil {

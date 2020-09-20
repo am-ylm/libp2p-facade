@@ -1,4 +1,4 @@
-module github.com/amirylm/priv-libp2p-node
+module github.com/amirylm/libp2p-facade
 
 go 1.13
 

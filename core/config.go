@@ -14,6 +14,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/libp2p/go-libp2p-core/routing"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	record "github.com/libp2p/go-libp2p-record"
 	secio "github.com/libp2p/go-libp2p-secio"
 	libp2ptls "github.com/libp2p/go-libp2p-tls"
@@ -21,14 +22,14 @@ import (
 	"time"
 )
 
-// NewBaseLibP2P creates an instance of libp2p host + DHT and peer discovery / pubsub (if configured)
-func NewBaseLibP2P(ctx context.Context, cfg *Config, opts ...libp2p.Option) (host.Host, *kaddht.IpfsDHT, error) {
+// BootstrapLibP2P creates an instance of libp2p host + DHT and peer discovery / pubsub (if configured)
+func BootstrapLibP2P(ctx context.Context, cfg *Config, opts ...libp2p.Option) (host.Host, *kaddht.IpfsDHT, *pubsub.PubSub, error) {
 	var idht *kaddht.IpfsDHT
 	var err error
 
 	libp2pOpts, err := cfg.ToLibP2pOpts(opts...)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	libp2pOpts = append(libp2pOpts,
@@ -42,8 +43,17 @@ func NewBaseLibP2P(ctx context.Context, cfg *Config, opts ...libp2p.Option) (hos
 		ctx,
 		libp2pOpts...,
 	)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
-	return h, idht, err
+	err = ConfigureDiscovery(ctx, h, cfg.Discovery, cfg.Logger)
+	if err != nil {
+		return h, idht, nil, err
+	}
+	ps, err := pubsub.NewGossipSub(ctx, h)
+
+	return h, idht, ps, err
 }
 
 // Config holds the needed configuration for creating a private node instance
@@ -62,6 +72,8 @@ type Config struct {
 	Peers []peer.AddrInfo
 	// ConnManagerConfig is used to configure the conn management of current peer
 	ConnManagerConfig *ConnManagerConfig
+	// Discovery is used to configure discovery (+pubsub)
+	Discovery *DiscoveryConfig
 }
 
 // NewConfig creates the minimum needed Config
@@ -69,7 +81,7 @@ func NewConfig(priv crypto.PrivKey, psk pnet.PSK, store datastore.Batching) *Con
 	opts := Config{
 		PrivKey: priv,
 		Secret:  psk,
-		DS: store,
+		DS:      store,
 	}
 	return &opts
 }
@@ -107,7 +119,6 @@ func (cfg *Config) defaults() error {
 		cfg.DS = dssync.MutexWrap(datastore.NewMapDatastore())
 	}
 	if cfg.Addrs == nil || len(cfg.Addrs) == 0 {
-		// currently using libp2p defaults, might be changed
 		addripv4, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/0")
 		addripv6, _ := multiaddr.NewMultiaddr("/ip6/::/tcp/0")
 		cfg.Addrs = []multiaddr.Multiaddr{addripv4, addripv6}
@@ -116,12 +127,14 @@ func (cfg *Config) defaults() error {
 		cmc := ConnManagerConfig{100, 600, time.Minute}
 		cfg.ConnManagerConfig = &cmc
 	}
+	if cfg.Discovery == nil {
+		cfg.Discovery = NewDiscoveryConfig(nil)
+	}
 	if cfg.Logger == nil {
 		cfg.Logger = defaultLogger()
 	}
 	return nil
 }
-
 
 func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*kaddht.IpfsDHT, error) {
 	dhtOpts := []kaddht.Option{

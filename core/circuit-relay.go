@@ -15,13 +15,13 @@ var defaultRelayConnectionConfig = ConnManagerConfig{
 	200, 1000, time.Minute,
 }
 
-// NewRelayer creates an instance of NewBaseNode with the needed configuration to be a circuit-relay node
-func NewRelayer(ctx context.Context, cfg *Config, disc *DiscoveryConfig, opts ...libp2p.Option) LibP2PNode {
+// NewRelayer creates an instance of BasePeer with the needed configuration to be a circuit-relay node
+func NewRelayer(ctx context.Context, cfg *Config, opts ...libp2p.Option) LibP2PPeer {
 	if cfg.ConnManagerConfig == nil {
 		cfg.ConnManagerConfig = &defaultRelayConnectionConfig
 	}
 	opts = append(opts, libp2p.EnableRelay(circuit.OptHop))
-	return NewBaseNode(ctx, cfg, disc, opts...)
+	return NewBasePeer(ctx, cfg, opts...)
 }
 
 // CircuitRelayAddr construct a circuit relay address of the given relay and target peer
@@ -33,7 +33,7 @@ func CircuitRelayAddr(relay, target peer.ID) multiaddr.Multiaddr {
 
 func CircuitRelayAddrInfo(relay, target peer.ID) peer.AddrInfo {
 	return peer.AddrInfo{
-		ID: target,
+		ID:    target,
 		Addrs: []multiaddr.Multiaddr{CircuitRelayAddr(relay, target)},
 	}
 }

@@ -25,7 +25,7 @@ func TestRelayer(t *testing.T) {
 	psk := PNetSecret()
 
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
-	rel := NewRelayer(context.Background(), NewConfig(priv, psk, nil), nil)
+	rel := NewRelayer(context.Background(), NewConfig(priv, psk, nil))
 	go AutoClose(rel.Context(), rel)
 
 	rel.DHT().Bootstrap(context.Background())
@@ -35,21 +35,21 @@ func TestRelayer(t *testing.T) {
 	}
 
 	addr1, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/3031")
-	n1 := newNode(psk, []multiaddr.Multiaddr{addr1})
+	n1 := newPeer(psk, []multiaddr.Multiaddr{addr1})
 	go AutoClose(n1.Context(), n1)
 
 	wg.Add(1)
 	go func() {
 		conns := Connect(n1, []peer.AddrInfo{relInfo}, true)
 		for conn := range conns {
-			log.Println("new connection "+conn.Info.ID.String()+", error: ", conn.Error)
+			n1.Logger().Infof("new connection "+conn.Info.ID.String()+", error: ", conn.Error)
 		}
 		wg.Done()
 	}()
 	wg.Wait()
 
 	addr2, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/3032")
-	n2 := newNode(psk, []multiaddr.Multiaddr{addr2})
+	n2 := newPeer(psk, []multiaddr.Multiaddr{addr2})
 	go AutoClose(n2.Context(), n2)
 
 	n2.Host().SetStreamHandler("/hello", func(s network.Stream) {
@@ -86,9 +86,9 @@ func TestRelayer(t *testing.T) {
 	wg.Wait()
 }
 
-func newNode(psk pnet.PSK, addrs []multiaddr.Multiaddr) LibP2PNode {
+func newPeer(psk pnet.PSK, addrs []multiaddr.Multiaddr) LibP2PPeer {
 	priv, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 1)
 	ropts := NewConfig(priv, psk, nil)
 	ropts.Addrs = addrs
-	return NewBaseNode(context.Background(), ropts, nil, libp2p.EnableRelay())
+	return NewBasePeer(context.Background(), ropts, libp2p.EnableRelay())
 }
