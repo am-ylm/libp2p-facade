@@ -10,8 +10,8 @@ import (
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
 
-// LibP2PNode is the base interface
-type LibP2PNode interface {
+// LibP2PPeer is the base interface
+type LibP2PPeer interface {
 	Context() context.Context
 
 	Closeable
@@ -43,7 +43,7 @@ func AutoClose(ctx context.Context, c Closeable) {
 
 // Close closes the underlying host, dht and possibly other services (e.g. store, pubsub)
 // returns an array to be compatible with multiple closes
-func Close(node LibP2PNode) []error {
+func Close(node LibP2PPeer) []error {
 	all := []error{
 		node.DHT().Close(),
 		node.Host().Close(),
@@ -59,4 +59,3 @@ func Close(node LibP2PNode) []error {
 
 	return errs
 }
-

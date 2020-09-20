@@ -14,7 +14,7 @@ import (
 	"log"
 )
 
-type BaseNode struct {
+type BasePeer struct {
 	ctx context.Context
 
 	priv crypto.PrivKey
@@ -31,70 +31,60 @@ type BaseNode struct {
 	logger logging.EventLogger
 }
 
-func NewBaseNode(ctx context.Context, cfg *Config, discoveryCfg *DiscoveryConfig, opts ...libp2p.Option) *BaseNode {
-	h, idht, err := NewBaseLibP2P(ctx, cfg, opts...)
+func NewBasePeer(ctx context.Context, cfg *Config, opts ...libp2p.Option) *BasePeer {
+	h, idht, ps, err := BootstrapLibP2P(ctx, cfg, opts...)
 	if err != nil {
-		log.Panic("could not setup node")
+		log.Panic("could not setup peer")
 	}
-	var ps *pubsub.PubSub
-	if discoveryCfg != nil {
-		err = ConfigureDiscovery(ctx, h, discoveryCfg)
-		if err == nil {
-			ps, err = pubsub.NewGossipSub(ctx, h)
-		}
-		if err != nil {
-			log.Panic("could not setup discovery / pubsub")
-		}
-	}
-	n := BaseNode{
+	p := BasePeer{
 		ctx, cfg.PrivKey, cfg.Secret,
 		h, idht, cfg.DS, ps,
 		map[string]*pubsub.Topic{},
 		cfg.Logger,
 	}
-	return &n
+	return &p
 }
 
-func (n *BaseNode) Context() context.Context {
-	return n.ctx
+func (p *BasePeer) Context() context.Context {
+	return p.ctx
 }
 
-func (n *BaseNode) Close() error {
-	errs := Close(n)
+func (p *BasePeer) Close() error {
+	errs := Close(p)
 	if len(errs) > 0 {
 		return errors.New("could not close node")
 	}
 	return nil
 }
 
-func (n *BaseNode) PrivKey() crypto.PrivKey {
-	return n.priv
+func (p *BasePeer) PrivKey() crypto.PrivKey {
+	return p.priv
 }
 
-func (n *BaseNode) Psk() pnet.PSK {
-	return n.psk
+func (p *BasePeer) Psk() pnet.PSK {
+	return p.psk
 }
 
-func (n *BaseNode) Host() host.Host {
-	return n.host
+func (p *BasePeer) Host() host.Host {
+	return p.host
 }
 
-func (n *BaseNode) DHT() *kaddht.IpfsDHT {
-	return n.dht
+func (p *BasePeer) DHT() *kaddht.IpfsDHT {
+	return p.dht
 }
 
-func (n *BaseNode) Store() datastore.Batching {
-	return n.store
+func (p *BasePeer) Store() datastore.Batching {
+	return p.store
 }
 
-func (n *BaseNode) Logger() logging.EventLogger {
-	return n.logger
+func (p *BasePeer) Logger() logging.EventLogger {
+	return p.logger
 }
 
-func (n *BaseNode) PubSub() *pubsub.PubSub {
-	return n.ps
+func (p *BasePeer) PubSub() *pubsub.PubSub {
+	return p.ps
 }
 
-func (n *BaseNode) Topics() map[string]*pubsub.Topic {
-	return n.topics
+func (p *BasePeer) Topics() map[string]*pubsub.Topic {
+	return p.topics
 }

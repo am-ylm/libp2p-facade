@@ -3,7 +3,6 @@ package core
 import (
 	"bytes"
 	"context"
-	"errors"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/stretchr/testify/assert"
@@ -14,9 +13,12 @@ import (
 )
 
 func TestPubSubEmitter(t *testing.T) {
-	n := 3
+	n := 4
 	psk := PNetSecret()
-	nodes, err := setupNodesGroup(n, psk)
+	nodes, err := SetupGroup(n, func(peers []peer.AddrInfo, onPeerFound OnPeerFound) LibP2PPeer {
+		node := newPubSubPeer(psk, onPeerFound, peers)
+		return node
+	})
 	assert.Nil(t, err)
 	if nodes == nil {
 		assert.FailNow(t, "could not setup nodes")
@@ -32,7 +34,7 @@ func TestPubSubEmitter(t *testing.T) {
 	assert.Nil(t, err)
 	go func() {
 		for {
-			msg, err := sub1.Next(nodes[0].ctx)
+			msg, err := sub1.Next(nodes[0].Context())
 			assert.Nil(t, err)
 			assert.True(t, bytes.Equal(data, msg.Data))
 			pswg.Done()
@@ -43,7 +45,7 @@ func TestPubSubEmitter(t *testing.T) {
 	assert.Nil(t, err)
 	go func() {
 		for {
-			sub2.Next(nodes[1].ctx)
+			sub2.Next(nodes[1].Context())
 			assert.Fail(t, "should not receive a message")
 			return
 		}
@@ -53,55 +55,17 @@ func TestPubSubEmitter(t *testing.T) {
 	assert.Nil(t, err)
 	go func() {
 		time.Sleep(1000 * time.Millisecond)
-		topic3.Publish(nodes[2].ctx, data[:])
+		topic3.Publish(nodes[2].Context(), data[:])
 	}()
 	pswg.Wait()
 }
 
-func createNode(psk pnet.PSK, onPeerFound OnPeerFound, peers []peer.AddrInfo) *BaseNode {
-	n := NewBaseNode(context.Background(), NewConfig(nil, psk, nil), NewDiscoveryConfig(onPeerFound))
-	log.Printf("new node: %s", n.Host().ID().Pretty())
+func newPubSubPeer(psk pnet.PSK, onPeerFound OnPeerFound, peers []peer.AddrInfo) *BasePeer {
+	cfg := NewConfig(nil, psk, nil)
+	cfg.Discovery = NewDiscoveryConfig(onPeerFound)
+	n := NewBasePeer(context.Background(), cfg)
+	n.Logger().Infof("new peer: %s", n.Host().ID().Pretty())
 	Connect(n, peers, true)
 	return n
 }
 
-func setupNodesGroup(n int, psk pnet.PSK) ([]*BaseNode, error) {
-	var discwg sync.WaitGroup
-	discwg.Add(n)
-
-	onPeerFound := OnPeerFoundWaitGroup(&discwg)
-	nodes := []*BaseNode{}
-	peers := []peer.AddrInfo{}
-	timeout := time.After(6 * time.Second)
-	discovered := make(chan bool)
-
-	i := n
-	for i > 0 {
-		i--
-		node := createNode(psk, onPeerFound, peers)
-		if node == nil {
-			return nil, errors.New("could not create node")
-		}
-		go AutoClose(node.Context(), node)
-		nodes = append(nodes, node)
-		peers = append(peers, peer.AddrInfo{node.Host().ID(), node.Host().Addrs()})
-	}
-
-	go func() {
-		discwg.Wait()
-		discovered <- true
-	}()
-
-	select {
-	case <-timeout:
-		return nil, errors.New("setupNodesGroup timeout")
-	case <-discovered:
-		{
-			actualPeers := nodes[n-1].Host().Peerstore().Peers()
-			if len(actualPeers) != n {
-				return nil, errors.New("could not connect to all peers")
-			}
-		}
-	}
-	return nodes, nil
-}

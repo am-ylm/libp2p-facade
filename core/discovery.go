@@ -2,7 +2,8 @@ package core
 
 import (
 	"context"
-	"log"
+	"errors"
+	logging "github.com/ipfs/go-log/v2"
 	"sync"
 	"time"
 
@@ -45,6 +46,50 @@ func NewDiscoveryConfig(onPeerFound OnPeerFound) *DiscoveryConfig {
 	return &opts
 }
 
+type GroupNodeFactory func([]peer.AddrInfo, OnPeerFound) LibP2PPeer
+
+// SetupGroup will create a group of n local nodes that are connected to each other
+func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
+	var discwg sync.WaitGroup
+	discwg.Add(n-1)
+
+	onPeerFound := OnPeerFoundWaitGroup(&discwg)
+	nodes := []LibP2PPeer{}
+	peers := []peer.AddrInfo{}
+	timeout := time.After(6 * time.Second)
+	discovered := make(chan bool, 1)
+
+	i := n
+	for i > 0 {
+		i--
+		node := nodeFactory(peers, onPeerFound)
+		if node == nil {
+			return nil, errors.New("could not create node")
+		}
+		go AutoClose(node.Context(), node)
+		nodes = append(nodes, node)
+		peers = append(peers, peer.AddrInfo{node.Host().ID(), node.Host().Addrs()})
+	}
+
+	go func() {
+		discwg.Wait()
+		discovered <- true
+	}()
+
+	select {
+	case <-timeout:
+		return nil, errors.New("setupNodesGroup timeout")
+	case <-discovered:
+		{
+			actualPeers := nodes[0].Host().Peerstore().Peers()
+			if len(actualPeers) < n - 1 {
+				return nil, errors.New("could not connect to all peers")
+			}
+		}
+	}
+	return nodes, nil
+}
+
 // OnPeerFoundWaitGroup creates an OnPeerFound that triggers a WaitGroup
 func OnPeerFoundWaitGroup(wg *sync.WaitGroup) OnPeerFound {
 	return func(pi peer.AddrInfo) bool {
@@ -63,7 +108,7 @@ func OnPeerFoundWaitGroup(wg *sync.WaitGroup) OnPeerFound {
 }
 
 // ConfigureDiscovery binds mDNS discovery services
-func ConfigureDiscovery(ctx context.Context, h host.Host, opts *DiscoveryConfig) error {
+func ConfigureDiscovery(ctx context.Context, h host.Host, opts *DiscoveryConfig, logger logging.EventLogger) error {
 	discoveryServices := opts.Services
 
 	// setup default mDNS discovery to find local peers
@@ -74,7 +119,7 @@ func ConfigureDiscovery(ctx context.Context, h host.Host, opts *DiscoveryConfig)
 	}
 	discoveryServices = append(discoveryServices, disc)
 
-	n := discoveryNotifee{h, ctx, opts.OnPeerFound}
+	n := discoveryNotifee{h, ctx, opts.OnPeerFound, logger}
 	for _, disc := range discoveryServices {
 		disc.RegisterNotifee(&n)
 	}
@@ -86,26 +131,27 @@ type discoveryNotifee struct {
 	h           host.Host
 	ctx         context.Context
 	onPeerFound OnPeerFound
+	logger logging.EventLogger
 }
 
 // HandlePeerFound connects to peers discovered via mDNS. Once they're connected,
 func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
-	log.Printf("node %s", n.h.ID().Pretty())
-	printPeer("discovered new peer", pi)
+	n.logger.Infof("node %s", n.h.ID().Pretty())
+	printPeer(n.logger, "discovered new peer", pi)
 	if n.onPeerFound == nil || n.onPeerFound(pi) {
 		err := n.h.Connect(n.ctx, pi)
 		if err != nil {
-			log.Printf("could not connect to peer %s: %s\n", pi.ID.Pretty(), err)
+			n.logger.Warnf("could not connect to peer %s: %s\n", pi.ID.Pretty(), err)
 		} else {
-			log.Printf("connected to peer %s", pi.ID.Pretty())
+			n.logger.Infof("connected to peer %s", pi.ID.Pretty())
 		}
 	}
 }
 
-func printPeer(prefix string, pi peer.AddrInfo) {
+func printPeer(logger logging.EventLogger, prefix string, pi peer.AddrInfo) {
 	id := pi.ID.Pretty()
-	log.Printf("%s %s, listening on:", prefix, id)
+	logger.Infof("%s %s, listening on:", prefix, id)
 	for _, addr := range pi.Addrs {
-		log.Printf("\t- %s", addr.String())
+		logger.Infof("\t- %s", addr.String())
 	}
 }

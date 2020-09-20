@@ -48,7 +48,7 @@ func MAddrs(addrs []string) []multiaddr.Multiaddr {
 	return maddrs
 }
 
-// Peers takes []string ([]multiaddrs) and creates the corresponding peers slice
+// Peers takes []string ([]multiaddrs) and creates the corresponding peer-info slice
 func Peers(addrs []string) []peer.AddrInfo {
 	if len(addrs) == 0 {
 		return []peer.AddrInfo{}
@@ -56,7 +56,7 @@ func Peers(addrs []string) []peer.AddrInfo {
 	maddrs := MAddrs(addrs)
 	pis, err := peer.AddrInfosFromP2pAddrs(maddrs...)
 	if err != nil {
-		log.Printf("could not create peers info: %s", err.Error())
+		log.Fatalf("could not create peers info: %s", err.Error())
 	}
 	return pis
 }

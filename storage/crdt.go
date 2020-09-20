@@ -1,4 +1,4 @@
-package ipld
+package storage
 
 import (
 	"github.com/amirylm/priv-libp2p-node/core"
@@ -9,24 +9,24 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 )
 
-func ConfigureCrdt(node IpldNode, topicName string, crdtOpts *crdt.Options) (*crdt.Datastore, error) {
+func ConfigureCrdt(sp StoragePeer, topicName string, crdtOpts *crdt.Options) (*crdt.Datastore, error) {
 	if crdtOpts == nil {
 		crdtOpts = crdt.DefaultOptions()
 	}
 	// always override logger
-	crdtOpts.Logger = node.Logger()
+	crdtOpts.Logger = sp.Logger()
 
-	pubsubBC, err := crdt.NewPubSubBroadcaster(node.Context(), node.PubSub(), topicName)
+	pubsubBC, err := crdt.NewPubSubBroadcaster(sp.Context(), sp.PubSub(), topicName)
 	if err != nil {
-		node.Logger().Fatalf("could not create crdt.PubSubBroadcaster: %s", err.Error())
+		sp.Logger().Fatalf("could not create crdt.PubSubBroadcaster: %s", err.Error())
 	}
 
-	dsync := NewDagSyncer(node.DagService(), node.BlockService().Blockstore())
-	crdt, err := crdt.New(node.Store(), ds.NewKey("crdt"), dsync, pubsubBC, crdtOpts)
+	dsyncer := NewDagSyncer(sp.DagService(), sp.BlockService().Blockstore())
+	crdt, err := crdt.New(sp.Store(), ds.NewKey("crdt"), dsyncer, pubsubBC, crdtOpts)
 	if err != nil {
-		node.Logger().Fatal(err)
+		sp.Logger().Fatal(err)
 	}
-	go core.AutoClose(node.Context(), crdt)
+	go core.AutoClose(sp.Context(), crdt)
 
 	return crdt, err
 }
