@@ -71,12 +71,12 @@ func newCrdtNode(psk pnet.PSK, onPeerFound core.OnPeerFound, crdtTopic string) (
 	cfg := core.NewConfig(nil, psk, nil)
 	cfg.Discovery = core.NewDiscoveryConfig(onPeerFound)
 	base := core.NewBasePeer(context.Background(), cfg)
-	node := NewStoragePeer(base, false)
-	node.Logger().Infof("new node: %s", node.Host().ID().Pretty())
-	c, err := ConfigureCrdt(node, crdtTopic, nil)
+	peer := NewStoragePeer(base, false)
+	peer.Logger().Infof("new peer: %s", peer.Host().ID().Pretty())
+	c, err := ConfigureCrdt(peer, crdtTopic, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	go core.AutoClose(node.Context(), c)
-	return node, c, nil
+	go core.AutoClose(peer.Context(), c)
+	return peer, c, nil
 }

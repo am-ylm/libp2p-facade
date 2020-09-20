@@ -52,7 +52,7 @@ type GroupNodeFactory func(OnPeerFound) LibP2PPeer
 // used in tests
 func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	var discwg sync.WaitGroup
-	discwg.Add(n - 1)
+	discwg.Add(n)
 
 	onPeerFound := OnPeerFoundWaitGroup(&discwg)
 	nodes := []LibP2PPeer{}
@@ -74,21 +74,24 @@ func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	}
 
 	go func() {
-		discwg.Wait()
-		discovered <- true
+		select {
+		case <-timeout:
+			panic("setupNodesGroup timeout")
+		case <-discovered:
+			// do nothing
+		}
 	}()
 
-	select {
-	case <-timeout:
-		return nil, errors.New("setupNodesGroup timeout")
-	case <-discovered:
-		{
-			actualPeers := nodes[0].Host().Peerstore().Peers()
-			if len(actualPeers) < n-1 {
-				return nil, errors.New("could not connect to all peers")
-			}
-		}
+	discwg.Wait()
+
+	discovered <- true
+
+	actualPeers := nodes[0].Host().Peerstore().Peers()
+	if len(actualPeers) < n-1 {
+		return nil, errors.New("could not connect to all peers")
 	}
+
+
 	return nodes, nil
 }
 
