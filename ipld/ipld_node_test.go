@@ -38,14 +38,15 @@ func TestIpldNode(t *testing.T) {
 
 	base1 := core.NewBaseNode(context.Background(), core.NewConfig(nil, psk, nil), core.NewDiscoveryConfig(onPeerFound))
 	n1 := NewIpldNode(base1, false)
-	defer n1.Close()
+	go core.AutoClose(n1.Context(), n1)
 	n1.DHT().Bootstrap(n1.Context())
 
 	time.Sleep(time.Second)
 
 	base2 := core.NewBaseNode(context.Background(), core.NewConfig(nil, psk, nil), core.NewDiscoveryConfig(onPeerFound))
 	n2 := NewIpldNode(base2, false)
-	defer n2.Close()
+	go core.AutoClose(n2.Context(), n2)
+
 	core.Connect(n2, []peer.AddrInfo{{n1.Host().ID(), n1.Host().Addrs()}}, true)
 
 	discwg.Wait()
