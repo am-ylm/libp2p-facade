@@ -18,19 +18,11 @@ This package makes it easy to configure several types of libp2p peers:
     - [crdt](https://github.com/ipfs/go-ds-crdt) 
     could be configured easily to provide state consistency, see `./storage/crdt.go`
 
-## Install
-
-As a library:
+## Usage
 
 ```bash
 go get github.com/amirylm/libp2p-facade
 ```
-
-## Usage
-
-More examples available in:
-  - tests in this project
-  - [amir-yahalom/go-csn](https://github.com/amir-yahalom/go-csn) > `./cmd` folder
 
 ```go
 package main
@@ -69,3 +61,6 @@ func main() {
 }
 ``` 
 
+More examples available in:
+  - tests in this project
+  - [amir-yahalom/go-csn](https://github.com/amir-yahalom/go-csn) > `./cmd` folder
