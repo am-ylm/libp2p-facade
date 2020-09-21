@@ -28,9 +28,9 @@ go get github.com/amirylm/libp2p-facade
 
 ## Usage
 
-[Relay example](https://github.com/amir-yahalom/bootnode)
-
-See tests for more examples.
+More examples available in:
+  - tests in this project
+  - [amir-yahalom/go-csn](https://github.com/amir-yahalom/go-csn) > `./cmd` folder
 
 ```go
 package main
