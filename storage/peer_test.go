@@ -29,7 +29,6 @@ func TestStorageNodeOffline(t *testing.T) {
 }
 
 func TestStorageNode(t *testing.T) {
-	//t.SkipNow()
 	n := 4
 	psk := core.PNetSecret()
 	nodes, err := core.SetupGroup(n, func() core.LibP2PPeer {

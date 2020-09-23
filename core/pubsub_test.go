@@ -11,8 +11,6 @@ import (
 )
 
 func TestPubSubEmitter(t *testing.T) {
-	//t.SkipNow()
-
 	n := 4
 	psk := PNetSecret()
 	nodes, err := SetupGroup(n, func() LibP2PPeer {

@@ -47,7 +47,8 @@ func NewDiscoveryConfig(onPeerFound OnPeerFound) *DiscoveryConfig {
 }
 
 // SetupGroup will create a group of n local nodes that are connected to each other
-// used in tests
+// assuming (at least) n-1 will be connected otherwise an error is returned
+// n-1 for stability as this function is used in tests
 func SetupGroup(n int, nodeFactory NodeFactory) ([]LibP2PPeer, error) {
 	var discwg sync.WaitGroup
 

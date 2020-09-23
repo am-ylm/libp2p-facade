@@ -10,7 +10,6 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
 
-	"log"
 	"sync"
 	"testing"
 )
@@ -61,7 +60,7 @@ func TestRelayer(t *testing.T) {
 	go func() {
 		conns := Connect(n2, []peer.AddrInfo{relInfo}, true)
 		for conn := range conns {
-			log.Println("new connection "+conn.Info.ID.String()+", error: ", conn.Error)
+			n2.Logger().Info("connect event:", conn)
 		}
 		wg.Done()
 	}()
@@ -73,7 +72,7 @@ func TestRelayer(t *testing.T) {
 	go func() {
 		conns := Connect(n1, []peer.AddrInfo{n2relayInfo}, false)
 		for conn := range conns {
-			log.Println("new connection "+conn.Info.ID.String()+", error: ", conn.Error)
+			n1.Logger().Info("connect event:", conn)
 		}
 		wg.Done()
 	}()

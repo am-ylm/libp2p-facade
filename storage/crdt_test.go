@@ -13,7 +13,6 @@ import (
 )
 
 func TestIpldNodeWithCrdt(t *testing.T) {
-	//t.SkipNow()
 	n := 4
 	crdts := []*crdt.Datastore{}
 	topicName := "crdt-test"
