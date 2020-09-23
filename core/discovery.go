@@ -46,15 +46,11 @@ func NewDiscoveryConfig(onPeerFound OnPeerFound) *DiscoveryConfig {
 	return &opts
 }
 
-type GroupNodeFactory func(OnPeerFound) LibP2PPeer
-
 // SetupGroup will create a group of n local nodes that are connected to each other
 // used in tests
-func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
-	discwg := sync.WaitGroup{}
-	discwg.Add(n)
+func SetupGroup(n int, nodeFactory NodeFactory) ([]LibP2PPeer, error) {
+	var discwg sync.WaitGroup
 
-	onPeerFound := OnPeerFoundWaitGroup(&discwg)
 	nodes := []LibP2PPeer{}
 	peers := []peer.AddrInfo{}
 	timeout := time.After(5 * time.Second)
@@ -63,13 +59,27 @@ func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 	i := n
 	for i > 0 {
 		i--
-		node := nodeFactory(onPeerFound)
+		node := nodeFactory()
 		if node == nil {
 			return nil, errors.New("could not create node")
 		}
 		go AutoClose(node.Context(), node)
+		discwg.Add(len(nodes))
 		nodes = append(nodes, node)
-		go Connect(node, peers, true)
+		go func() {
+			defer func() {
+				// recover from calling Done on a negative wait group counter
+				// this originates in a different behavior of discovery notifications cross OS
+				if r := recover(); r != nil {
+					return
+				}
+			}()
+			conns := Connect(node, peers, true)
+			for conn := range conns {
+				node.Logger().Info("connect event:", conn)
+				discwg.Done()
+			}
+		}()
 		peers = append(peers, peer.AddrInfo{node.Host().ID(), node.Host().Addrs()})
 	}
 
@@ -91,25 +101,7 @@ func SetupGroup(n int, nodeFactory GroupNodeFactory) ([]LibP2PPeer, error) {
 		return nil, errors.New("could not connect to all peers")
 	}
 
-
 	return nodes, nil
-}
-
-// OnPeerFoundWaitGroup creates an OnPeerFound that triggers a WaitGroup
-func OnPeerFoundWaitGroup(wg *sync.WaitGroup) OnPeerFound {
-	return func(pi peer.AddrInfo) bool {
-		go func() {
-			defer func() {
-				// recover from calling Done on a negative wait group counter
-				// this originates in a different behavior of discovery notifications cross OS
-				if r := recover(); r != nil {
-					return
-				}
-			}()
-			wg.Done()
-		}()
-		return true
-	}
 }
 
 // ConfigureDiscovery binds mDNS discovery services

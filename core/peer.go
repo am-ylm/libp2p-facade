@@ -28,6 +28,8 @@ type LibP2PPeer interface {
 	Logger() logging.EventLogger
 }
 
+type NodeFactory func() LibP2PPeer
+
 // Closeable represent an object the can be closed
 type Closeable interface {
 	Close() error
