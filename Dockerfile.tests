@@ -1,0 +1,22 @@
+FROM golang:1.13-alpine as builder
+
+ENV CGO_ENABLED 0
+ENV GOOS linux
+ENV APP_HOME /go/src/app
+
+RUN apk update && apk add --no-cache git
+
+RUN mkdir -p $APP_HOME
+WORKDIR $APP_HOME
+
+COPY ./go.mod ./go.sum ./
+RUN go mod download
+
+COPY ./core/ ./core/
+COPY ./storage/ ./storage/
+
+RUN go build -v ./...
+
+RUN go clean -testcache
+
+CMD ["go", "test", "-v", "./..."]

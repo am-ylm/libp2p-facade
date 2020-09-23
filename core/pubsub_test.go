@@ -11,12 +11,12 @@ import (
 )
 
 func TestPubSubEmitter(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 
 	n := 4
 	psk := PNetSecret()
-	nodes, err := SetupGroup(n, func(onPeerFound OnPeerFound) LibP2PPeer {
-		node := newPubSubPeer(psk, onPeerFound)
+	nodes, err := SetupGroup(n, func() LibP2PPeer {
+		node := newPubSubPeer(psk)
 		return node
 	})
 	assert.Nil(t, err)
@@ -60,9 +60,8 @@ func TestPubSubEmitter(t *testing.T) {
 	pswg.Wait()
 }
 
-func newPubSubPeer(psk pnet.PSK, onPeerFound OnPeerFound) *BasePeer {
+func newPubSubPeer(psk pnet.PSK) *BasePeer {
 	cfg := NewConfig(nil, psk, nil)
-	cfg.Discovery = NewDiscoveryConfig(onPeerFound)
 	n := NewBasePeer(context.Background(), cfg)
 	n.Logger().Infof("new peer: %s", n.Host().ID().Pretty())
 	return n

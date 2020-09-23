@@ -64,3 +64,8 @@ func main() {
 More examples available in:
   - tests in this project
   - [amir-yahalom/go-csn](https://github.com/amir-yahalom/go-csn) > `./cmd` folder
+
+
+### Tests
+
+You can run tests locally or in a docker (`./Dockerfile.tests`)
