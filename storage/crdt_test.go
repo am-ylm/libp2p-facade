@@ -13,14 +13,14 @@ import (
 )
 
 func TestIpldNodeWithCrdt(t *testing.T) {
-	t.SkipNow()
-
+	//t.SkipNow()
+	n := 4
 	crdts := []*crdt.Datastore{}
 	topicName := "crdt-test"
 	psk := core.PNetSecret()
 
-	_, err := core.SetupGroup(3, func(onPeerFound core.OnPeerFound) core.LibP2PPeer {
-		node, c, err := newCrdtNode(psk, onPeerFound, topicName)
+	_, err := core.SetupGroup(n, func() core.LibP2PPeer {
+		node, c, err := newCrdtNode(psk, topicName)
 		assert.Nil(t, err)
 		crdts = append(crdts, c)
 		return node
@@ -67,9 +67,8 @@ func TestIpldNodeWithCrdt(t *testing.T) {
 	assert.True(t, bytes.Equal(val1, state22))
 }
 
-func newCrdtNode(psk pnet.PSK, onPeerFound core.OnPeerFound, crdtTopic string) (StoragePeer, *crdt.Datastore, error) {
+func newCrdtNode(psk pnet.PSK, crdtTopic string) (StoragePeer, *crdt.Datastore, error) {
 	cfg := core.NewConfig(nil, psk, nil)
-	cfg.Discovery = core.NewDiscoveryConfig(onPeerFound)
 	base := core.NewBasePeer(context.Background(), cfg)
 	peer := NewStoragePeer(base, false)
 	peer.Logger().Infof("new peer: %s", peer.Host().ID().Pretty())
