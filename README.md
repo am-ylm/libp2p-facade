@@ -69,3 +69,30 @@ More examples available in:
 ### Tests
 
 You can run tests locally or in a docker (`./Dockerfile.tests`)
+
+#### Use in tests
+
+There is a way to create a group of n local peers, and use it test your case:
+
+```go
+package content
+
+import (
+	"context"
+	p2pfacade "github.com/amirylm/libp2p-facade/core"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func TestMultiplePeers(t *testing.T) {
+	n := 3
+	psk := p2pfacade.PNetSecret()
+	peers, err := p2pfacade.SetupGroup(n, func() p2pfacade.LibP2PPeer {
+		cfg := p2pfacade.NewConfig(nil, psk, nil)
+		return p2pfacade.NewBasePeer(context.Background(), cfg)
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, n, len(peers))
+	// ...
+}
+```
