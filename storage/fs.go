@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/ipfs/go-unixfs/importer/balanced"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -31,23 +32,27 @@ const (
 	DefaultHashFunc        = "sha2-256"
 )
 
-func AddStream(node StoragePeer, k []byte, r io.Reader, hfunc string) (ipld.Node, error) {
-	prefix, err := cidBuilder(hfunc)
+// AddStream is suitable for large data
+// using trickle layout which is suitable for streaming
+func AddStream(node StoragePeer, r io.Reader, hfunc string) (ipld.Node, error) {
+	prefix, err := NewCidBuilder(hfunc)
 	if err != nil {
 		return nil, err
 	}
-	return Add(node, k, r, prefix, trickle.Layout)
+
+	return Add(node, r, prefix, trickle.Layout)
 }
 
 // Add chunks and adds content to the DAGService from a reader.
-// Data is stored as a UnixFS DAG (default for IPFS).
-// returs the root ipld.Node
-func Add(node StoragePeer, k []byte, r io.Reader, cb cid.Builder, l layout) (ipld.Node, error) {
+// data is stored as a UnixFS DAG (default for IPFS).
+// fallback to balanced layout, large data should be added via AddStream()
+// returns the root ipld.Node
+func Add(node StoragePeer, r io.Reader, cb cid.Builder, l layout) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
 		Dagserv: node.DagService(),
 		//RawLeaves:  true,
 		Maxlinks: helpers.DefaultLinksPerBlock,
-		//NoCopy:     true,
+		NoCopy:     true,
 		CidBuilder: cb,
 	}
 
@@ -63,7 +68,7 @@ func Add(node StoragePeer, k []byte, r io.Reader, cb cid.Builder, l layout) (ipl
 	}
 
 	if l == nil {
-		l = trickle.Layout
+		l = balanced.Layout
 	}
 
 	return l(dbh)
@@ -89,7 +94,7 @@ func GetBytes(node StoragePeer, c cid.Cid) ([]byte, error) {
 	return ioutil.ReadAll(rsc)
 }
 
-func cidBuilder(hfunc string) (cid.Builder, error) {
+func NewCidBuilder(hfunc string) (cid.Builder, error) {
 	prefix, err := merkledag.PrefixForCidVersion(1)
 	if err != nil {
 		return nil, fmt.Errorf("bad CID Version: %s", err)

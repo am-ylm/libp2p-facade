@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/amirylm/libp2p-facade/core"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -54,11 +53,11 @@ func TestStorageNode(t *testing.T) {
 
 func add(n StoragePeer, data string) (ipld.Node, error) {
 	r := bytes.NewReader([]byte(data))
-	cb, err := cidBuilder("")
+	cb, err := NewCidBuilder("")
 	if err != nil {
 		return nil, err
 	}
-	return Add(n, []byte{}, r, cb, balanced.Layout)
+	return Add(n, r, cb, nil)
 }
 
 func newStoragePeer(psk pnet.PSK) StoragePeer {
