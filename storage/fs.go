@@ -52,11 +52,9 @@ func Add(node StoragePeer, r io.Reader, cb cid.Builder, l layout) (ipld.Node, er
 		Dagserv: node.DagService(),
 		//RawLeaves:  true,
 		Maxlinks: helpers.DefaultLinksPerBlock,
-		NoCopy:     true,
+		//NoCopy:     true,
 		CidBuilder: cb,
 	}
-
-	// TODO encrypt stream
 
 	chnk, err := chunker.FromString(r, Chunker)
 	if err != nil {
