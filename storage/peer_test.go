@@ -51,6 +51,37 @@ func TestStorageNode(t *testing.T) {
 	assert.Equal(t, plaintext, string(b))
 }
 
+func TestAddDir(t *testing.T) {
+	n := 4
+	psk := core.PNetSecret()
+	nodes, err := core.SetupGroup(n, func() core.LibP2PPeer {
+		return newStoragePeer(psk)
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, n, len(nodes))
+
+	time.Sleep(time.Millisecond * 500)
+
+	n0 := nodes[0].(StoragePeer)
+	dir, dirnode, err := AddDir(n0)
+	assert.Nil(t, err)
+
+	plaintext := "Child data..."
+	name := "somedata"
+	datanode, err := add(n0, "Child data...")
+	assert.Nil(t, err)
+	err = dir.AddChild(n0.Context(), name, datanode)
+	assert.Nil(t, err)
+
+	n1 := nodes[1].(StoragePeer)
+	dirN1, err := LoadDir(n1, dirnode.Cid())
+	assert.Nil(t, err)
+	datanodeN1, err := dirN1.Find(n1.Context(), name)
+	b, err := GetBytes(n1, datanodeN1.Cid())
+	assert.Nil(t, err)
+	assert.Equal(t, plaintext, string(b))
+}
+
 func add(n StoragePeer, data string) (ipld.Node, error) {
 	r := bytes.NewReader([]byte(data))
 	cb, err := NewCidBuilder("")

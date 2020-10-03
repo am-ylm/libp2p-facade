@@ -32,15 +32,30 @@ const (
 	DefaultHashFunc        = "sha2-256"
 )
 
+func AddDir(node StoragePeer) (ufsio.Directory, ipld.Node, error) {
+	dir := ufsio.NewDirectory(node.DagService())
+	dirnode, err := dir.GetNode()
+	return dir, dirnode, err
+}
+
+func LoadDir(node StoragePeer, c cid.Cid) (ufsio.Directory, error) {
+	dag := node.DagService()
+	n, err := dag.Get(node.Context(), c)
+	if err != nil {
+		return nil, err
+	}
+	return ufsio.NewDirectoryFromNode(dag, n)
+}
+
 // AddStream is suitable for large data
 // using trickle layout which is suitable for streaming
 func AddStream(node StoragePeer, r io.Reader, hfunc string) (ipld.Node, error) {
-	prefix, err := NewCidBuilder(hfunc)
+	cb, err := NewCidBuilder(hfunc)
 	if err != nil {
 		return nil, err
 	}
 
-	return Add(node, r, prefix, trickle.Layout)
+	return Add(node, r, cb, trickle.Layout)
 }
 
 // Add chunks and adds content to the DAGService from a reader.
