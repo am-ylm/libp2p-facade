@@ -67,6 +67,10 @@ func LoadDir(peer StoragePeer, c cid.Cid) (ufsio.Directory, error) {
 	return ufsio.NewDirectoryFromNode(dag, n)
 }
 
+func Remove(peer StoragePeer, cids []cid.Cid) error {
+	return peer.DagService().RemoveMany(peer.Context(), cids)
+}
+
 // AddStream is suitable for large data
 // using trickle layout which is suitable for streaming
 func AddStream(peer StoragePeer, r io.Reader, hfunc string) (ipld.Node, error) {

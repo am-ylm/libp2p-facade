@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/amirylm/libp2p-facade/core"
+	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/stretchr/testify/assert"
@@ -39,16 +40,23 @@ func TestStorageNode(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 
 	// add value in first node
-	n1 := nodes[0].(StoragePeer)
+	n0 := nodes[0].(StoragePeer)
 	plaintext := "Some data... more or less"
-	root, err := add(n1, plaintext)
+	root, err := add(n0, plaintext)
 	assert.Nil(t, err)
 
 	// get value from second node
-	n2 := nodes[1].(StoragePeer)
-	b, err := GetBytes(n2, root.Cid())
+	n1 := nodes[1].(StoragePeer)
+	b1, err := GetBytes(n1, root.Cid())
 	assert.Nil(t, err)
-	assert.Equal(t, plaintext, string(b))
+	assert.Equal(t, plaintext, string(b1))
+
+	// doing the same after deletion
+	err = Remove(n0, []cid.Cid{root.Cid()})
+	assert.Nil(t, err)
+	n2 := nodes[2].(StoragePeer)
+	_, err = GetBytes(n2, root.Cid())
+	assert.NotNil(t, err)
 }
 
 func TestAddDir(t *testing.T) {
