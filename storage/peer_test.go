@@ -64,14 +64,18 @@ func TestAddDir(t *testing.T) {
 
 	n0 := nodes[0].(StoragePeer)
 	dir, dirnode, err := AddDir(n0)
-	assert.Nil(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n0.Logger().Infof("dir created %s", dirnode.Cid().String())
 
 	plaintext := "Child data..."
 	name := "somedata"
 	datanode, err := add(n0, "Child data...")
 	assert.Nil(t, err)
-	err = dir.AddChild(n0.Context(), name, datanode)
+	dir, dirnode, err = AddToDir(n0, dir, name, datanode)
 	assert.Nil(t, err)
+	n0.Logger().Infof("data %s added to %s", datanode.Cid().String(), dirnode.Cid().String())
 
 	n1 := nodes[1].(StoragePeer)
 	dirN1, err := LoadDir(n1, dirnode.Cid())
