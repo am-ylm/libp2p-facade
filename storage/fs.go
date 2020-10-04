@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/ipfs/go-unixfs/importer/balanced"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -21,7 +22,7 @@ import (
 func init() {
 	ipld.Register(cid.DagProtobuf, dag.DecodeProtobufBlock)
 	ipld.Register(cid.Raw, dag.DecodeRawBlock)
-	ipld.Register(cid.DagCBOR, cbor.DecodeBlock) // need to decode CBOR
+	ipld.Register(cid.DagCBOR, cbor.DecodeBlock)
 }
 
 type layout = func(db *helpers.DagBuilderHelper) (ipld.Node, error)
@@ -31,27 +32,64 @@ const (
 	DefaultHashFunc        = "sha2-256"
 )
 
-func AddStream(node StoragePeer, k []byte, r io.Reader, hfunc string) (ipld.Node, error) {
-	prefix, err := cidBuilder(hfunc)
+func AddDir(peer StoragePeer) (ufsio.Directory, ipld.Node, error) {
+	cb, err := NewCidBuilder("")
+	if err != nil {
+		return nil, nil, err
+	}
+	dir := ufsio.NewDirectory(peer.DagService())
+	dir.SetCidBuilder(cb)
+	dirnode, err := dir.GetNode()
+	if err != nil {
+		return nil, nil, err
+	}
+	return dir, dirnode, peer.DagService().Add(peer.Context(), dirnode)
+}
+
+func AddToDir(peer StoragePeer, dir ufsio.Directory, name string, node ipld.Node) (ufsio.Directory, ipld.Node, error) {
+	err := dir.AddChild(peer.Context(), name, node)
+	if err != nil {
+		return nil, nil, err
+	}
+	dirnode, err := dir.GetNode()
+	if err != nil {
+		return nil, nil, err
+	}
+	return dir, dirnode, peer.DagService().Add(peer.Context(), dirnode)
+}
+
+func LoadDir(peer StoragePeer, c cid.Cid) (ufsio.Directory, error) {
+	dag := peer.DagService()
+	n, err := dag.Get(peer.Context(), c)
 	if err != nil {
 		return nil, err
 	}
-	return Add(node, k, r, prefix, trickle.Layout)
+	return ufsio.NewDirectoryFromNode(dag, n)
+}
+
+// AddStream is suitable for large data
+// using trickle layout which is suitable for streaming
+func AddStream(peer StoragePeer, r io.Reader, hfunc string) (ipld.Node, error) {
+	cb, err := NewCidBuilder(hfunc)
+	if err != nil {
+		return nil, err
+	}
+
+	return Add(peer, r, cb, trickle.Layout)
 }
 
 // Add chunks and adds content to the DAGService from a reader.
-// Data is stored as a UnixFS DAG (default for IPFS).
-// returs the root ipld.Node
-func Add(node StoragePeer, k []byte, r io.Reader, cb cid.Builder, l layout) (ipld.Node, error) {
+// data is stored as a UnixFS DAG (default for IPFS).
+// fallback to balanced layout, large data should be added via AddStream()
+// returns the root ipld.Node
+func Add(peer StoragePeer, r io.Reader, cb cid.Builder, l layout) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
-		Dagserv: node.DagService(),
+		Dagserv: peer.DagService(),
 		//RawLeaves:  true,
 		Maxlinks: helpers.DefaultLinksPerBlock,
 		//NoCopy:     true,
 		CidBuilder: cb,
 	}
-
-	// TODO encrypt stream
 
 	chnk, err := chunker.FromString(r, Chunker)
 	if err != nil {
@@ -63,25 +101,25 @@ func Add(node StoragePeer, k []byte, r io.Reader, cb cid.Builder, l layout) (ipl
 	}
 
 	if l == nil {
-		l = trickle.Layout
+		l = balanced.Layout
 	}
 
 	return l(dbh)
 }
 
 // Get returns a reader to a file (must be a UnixFS DAG) as identified by its root CID.
-func Get(node StoragePeer, c cid.Cid) (ufsio.ReadSeekCloser, error) {
-	dag := node.DagService()
-	n, err := dag.Get(node.Context(), c)
+func Get(peer StoragePeer, c cid.Cid) (ufsio.ReadSeekCloser, error) {
+	dag := peer.DagService()
+	n, err := dag.Get(peer.Context(), c)
 	if err != nil {
 		return nil, err
 	}
-	return ufsio.NewDagReader(node.Context(), n, dag)
+	return ufsio.NewDagReader(peer.Context(), n, dag)
 }
 
 // Get returns a reader to a file (must be a UnixFS DAG) as identified by its root CID.
-func GetBytes(node StoragePeer, c cid.Cid) ([]byte, error) {
-	rsc, err := Get(node, c)
+func GetBytes(peer StoragePeer, c cid.Cid) ([]byte, error) {
+	rsc, err := Get(peer, c)
 	defer rsc.Close()
 	if err != nil {
 		return nil, err
@@ -89,7 +127,7 @@ func GetBytes(node StoragePeer, c cid.Cid) ([]byte, error) {
 	return ioutil.ReadAll(rsc)
 }
 
-func cidBuilder(hfunc string) (cid.Builder, error) {
+func NewCidBuilder(hfunc string) (cid.Builder, error) {
 	prefix, err := merkledag.PrefixForCidVersion(1)
 	if err != nil {
 		return nil, fmt.Errorf("bad CID Version: %s", err)
