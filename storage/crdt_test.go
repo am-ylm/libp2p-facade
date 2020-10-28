@@ -28,26 +28,28 @@ func TestIpldNodeWithCrdt(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 500)
 
-	// add value in first node
+	// manipulating values from multiple peers
 	state1 := []byte(`{"state": "val1"}`)
 	state11 := []byte(`{"state": "val11"}`)
-	//state111 := []byte(`{"state": "val111"}`)
 	state2 := []byte(`{"state": "val2"}`)
 	state22 := []byte(`{"state": "val22"}`)
 	k := "state-key"
+	k2 := "state-key2"
 	err = crdts[0].Put(ds.NewKey(k), state1)
 	assert.Nil(t, err)
 
 	err = crdts[1].Put(ds.NewKey(k), state2)
 	assert.Nil(t, err)
+	err = crdts[1].Put(ds.NewKey(k2), state2)
+	assert.Nil(t, err)
 
 	err = crdts[0].Put(ds.NewKey(k), state11)
 	assert.Nil(t, err)
 
-	//err = crdt1.Put(ds.NewKey(k), state111)
-	//assert.Nil(t, err)
-
 	err = crdts[1].Put(ds.NewKey(k), state22)
+	assert.Nil(t, err)
+
+	err = crdts[0].Put(ds.NewKey(k2), state11)
 	assert.Nil(t, err)
 
 	time.Sleep(time.Second)
@@ -57,6 +59,8 @@ func TestIpldNodeWithCrdt(t *testing.T) {
 
 	val2, err := crdts[1].Get(ds.NewKey(k))
 	assert.Nil(t, err)
+	k2val2, err := crdts[1].Get(ds.NewKey(k2))
+	assert.Nil(t, err)
 
 	val3, err := crdts[2].Get(ds.NewKey(k))
 	assert.Nil(t, err)
@@ -64,6 +68,7 @@ func TestIpldNodeWithCrdt(t *testing.T) {
 	assert.True(t, bytes.Equal(val1, val2))
 	assert.True(t, bytes.Equal(val2, val3))
 	assert.True(t, bytes.Equal(val1, state22))
+	assert.True(t, bytes.Equal(k2val2, state11))
 }
 
 func newCrdtNode(psk pnet.PSK, crdtTopic string) (StoragePeer, *crdt.Datastore, error) {

@@ -9,20 +9,20 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 )
 
-func ConfigureCrdt(sp StoragePeer, topicName string, crdtOpts *crdt.Options) (*crdt.Datastore, error) {
+func ConfigureCrdt(sp StoragePeer, name string, crdtOpts *crdt.Options) (*crdt.Datastore, error) {
 	if crdtOpts == nil {
 		crdtOpts = crdt.DefaultOptions()
 	}
 	// always override logger
 	crdtOpts.Logger = sp.Logger()
 
-	pubsubBC, err := crdt.NewPubSubBroadcaster(sp.Context(), sp.PubSub(), topicName)
+	pubsubBC, err := crdt.NewPubSubBroadcaster(sp.Context(), sp.PubSub(), name)
 	if err != nil {
 		sp.Logger().Fatalf("could not create crdt.PubSubBroadcaster: %s", err.Error())
 	}
 
 	dsyncer := NewDagSyncer(sp.DagService(), sp.BlockService().Blockstore())
-	crdt, err := crdt.New(sp.Store(), ds.NewKey("crdt"), dsyncer, pubsubBC, crdtOpts)
+	crdt, err := crdt.New(sp.Store(), ds.NewKey(name), dsyncer, pubsubBC, crdtOpts)
 	if err != nil {
 		sp.Logger().Fatal(err)
 	}
