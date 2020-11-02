@@ -32,6 +32,7 @@ const (
 	DefaultHashFunc        = "sha2-256"
 )
 
+// AddDir creates a new directory and adds it to the DAGService
 func AddDir(peer StoragePeer) (ufsio.Directory, ipld.Node, error) {
 	cb, err := NewCidBuilder("")
 	if err != nil {
@@ -46,6 +47,7 @@ func AddDir(peer StoragePeer) (ufsio.Directory, ipld.Node, error) {
 	return dir, dirnode, peer.DagService().Add(peer.Context(), dirnode)
 }
 
+// AddToDir adds the given child to a dir
 func AddToDir(peer StoragePeer, dir ufsio.Directory, name string, node ipld.Node) (ufsio.Directory, ipld.Node, error) {
 	err := dir.AddChild(peer.Context(), name, node)
 	if err != nil {
@@ -58,6 +60,20 @@ func AddToDir(peer StoragePeer, dir ufsio.Directory, name string, node ipld.Node
 	return dir, dirnode, peer.DagService().Add(peer.Context(), dirnode)
 }
 
+// RemoveFromDir clears the given child from the dir
+func RemoveFromDir(peer StoragePeer, dir ufsio.Directory, name string) (ufsio.Directory, ipld.Node, error) {
+	err := dir.RemoveChild(peer.Context(), name)
+	if err != nil {
+		return nil, nil, err
+	}
+	dirnode, err := dir.GetNode()
+	if err != nil {
+		return nil, nil, err
+	}
+	return dir, dirnode, peer.DagService().Add(peer.Context(), dirnode)
+}
+
+// LoadDir looks for the desired dir
 func LoadDir(peer StoragePeer, c cid.Cid) (ufsio.Directory, error) {
 	dag := peer.DagService()
 	n, err := dag.Get(peer.Context(), c)
@@ -117,7 +133,7 @@ func Get(peer StoragePeer, c cid.Cid) (ufsio.ReadSeekCloser, error) {
 	return ufsio.NewDagReader(peer.Context(), n, dag)
 }
 
-// Get returns a reader to a file (must be a UnixFS DAG) as identified by its root CID.
+// GetBytes reads the entire dag and return the raw data bytes
 func GetBytes(peer StoragePeer, c cid.Cid) ([]byte, error) {
 	rsc, err := Get(peer, c)
 	defer rsc.Close()
