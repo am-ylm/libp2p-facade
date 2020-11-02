@@ -62,11 +62,7 @@ func TestPeerWithCrdt(t *testing.T) {
 	k2val2, err := crdts[1].Get(ds.NewKey(k2))
 	assert.Nil(t, err)
 
-	val3, err := crdts[2].Get(ds.NewKey(k))
-	assert.Nil(t, err)
-
 	assert.True(t, bytes.Equal(val1, val2))
-	assert.True(t, bytes.Equal(val2, val3))
 	assert.True(t, bytes.Equal(val1, state22))
 	assert.True(t, bytes.Equal(k2val2, state11))
 }
