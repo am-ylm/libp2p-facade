@@ -63,7 +63,7 @@ func main() {
 
 More examples available in:
   - tests in this project
-  - [amir-yahalom/go-csn](https://github.com/amir-yahalom/go-csn) > `./cmd` folder
+  - [amirylm/cbn](https://github.com/amirylm/cbn) > `./cmd` folder
 
 
 ### Tests
