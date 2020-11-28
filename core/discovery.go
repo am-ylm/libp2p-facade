@@ -3,9 +3,10 @@ package core
 import (
 	"context"
 	"errors"
-	logging "github.com/ipfs/go-log/v2"
 	"sync"
 	"time"
+
+	logging "github.com/ipfs/go-log/v2"
 
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -81,7 +82,10 @@ func SetupGroup(n int, nodeFactory NodeFactory) ([]LibP2PPeer, error) {
 				discwg.Done()
 			}
 		}()
-		peers = append(peers, peer.AddrInfo{node.Host().ID(), node.Host().Addrs()})
+		peers = append(peers, peer.AddrInfo{
+			ID:    node.Host().ID(),
+			Addrs: node.Host().Addrs(),
+		})
 	}
 
 	go func() {

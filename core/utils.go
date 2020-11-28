@@ -2,11 +2,12 @@ package core
 
 import (
 	"encoding/json"
-	"github.com/multiformats/go-multiaddr"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
+
+	"github.com/multiformats/go-multiaddr"
 
 	logging "github.com/ipfs/go-log/v2"
 	crypto "github.com/libp2p/go-libp2p-core/crypto"
@@ -31,7 +32,7 @@ func SerializeAddrInfo(info peer.AddrInfo) string {
 
 // SerializePeer marshals (json) the given host's info
 func SerializePeer(h host.Host) string {
-	pi := peer.AddrInfo{h.ID(), h.Addrs()}
+	pi := peer.AddrInfo{ID: h.ID(), Addrs: h.Addrs()}
 	return SerializeAddrInfo(pi)
 }
 
