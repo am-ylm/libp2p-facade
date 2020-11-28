@@ -20,7 +20,7 @@ func NewRelayer(ctx context.Context, cfg *Config, opts ...libp2p.Option) LibP2PP
 	if cfg.ConnManagerConfig == nil {
 		cfg.ConnManagerConfig = &defaultRelayConnectionConfig
 	}
-	opts = append(opts, libp2p.EnableRelay(circuit.OptHop))
+	opts = append(opts, libp2p.EnableRelay(circuit.OptActive))
 	return NewBasePeer(ctx, cfg, opts...)
 }
 
