@@ -58,6 +58,10 @@ func NewStoragePeer(base *core.BasePeer, offline bool) StoragePeer {
 		return nil
 	}
 	repro, err := SetupReprovider(base, bstore, defaultReprovideInterval)
+	if err != nil {
+		base.Logger().Panic("could not setup reprovider")
+		return nil
+	}
 	node := storagePeer{dag, base, bsrv, repro}
 	return &node
 }

@@ -27,7 +27,8 @@ func TestRelayer(t *testing.T) {
 	rel := NewRelayer(context.Background(), NewConfig(priv, psk, nil))
 	go AutoClose(rel.Context(), rel)
 
-	rel.DHT().Bootstrap(context.Background())
+	err := rel.DHT().Bootstrap(context.Background())
+	assert.Nil(t, err)
 	relInfo := peer.AddrInfo{
 		ID:    rel.Host().ID(),
 		Addrs: rel.Host().Addrs(),
@@ -53,7 +54,8 @@ func TestRelayer(t *testing.T) {
 
 	n2.Host().SetStreamHandler("/hello", func(s network.Stream) {
 		wg.Done()
-		s.Close()
+		err := s.Close()
+		assert.Nil(t, err)
 	})
 	// n2 -> rel
 	wg.Add(1)
@@ -81,7 +83,9 @@ func TestRelayer(t *testing.T) {
 	wg.Add(1)
 	s, err := n1.Host().NewStream(context.Background(), n2.Host().ID(), "/hello")
 	assert.Nil(t, err, "can't send message: %s", err)
-	s.Read(make([]byte, 1)) // block until the handler closes the stream
+	_, err = s.Read(make([]byte, 1)) // block until the handler closes the stream
+	assert.NotNil(t, err)
+	assert.Equal(t, err.Error(), "EOF")
 	wg.Wait()
 }
 

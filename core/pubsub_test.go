@@ -43,8 +43,9 @@ func TestPubSubEmitter(t *testing.T) {
 	assert.Nil(t, err)
 	go func() {
 		for {
-			sub2.Next(nodes[1].Context())
-			assert.Fail(t, "should not receive a message")
+			msg, err := sub2.Next(nodes[1].Context())
+			assert.Nil(t, msg)
+			assert.NotNil(t, err)
 			return
 		}
 	}()
@@ -53,7 +54,8 @@ func TestPubSubEmitter(t *testing.T) {
 	assert.Nil(t, err)
 	go func() {
 		time.Sleep(1000 * time.Millisecond)
-		topic3.Publish(nodes[2].Context(), data[:])
+		err := topic3.Publish(nodes[2].Context(), data[:])
+		assert.Nil(t, err)
 	}()
 	pswg.Wait()
 }
