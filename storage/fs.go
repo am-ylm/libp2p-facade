@@ -29,7 +29,7 @@ type layout = func(db *helpers.DagBuilderHelper) (ipld.Node, error)
 
 const (
 	Chunker         string = ""
-	DefaultHashFunc        = "sha2-256"
+	DefaultHashFunc string = "sha2-256"
 )
 
 // AddDir creates a new directory and adds it to the DAGService
@@ -136,10 +136,10 @@ func Get(peer StoragePeer, c cid.Cid) (ufsio.ReadSeekCloser, error) {
 // GetBytes reads the entire dag and return the raw data bytes
 func GetBytes(peer StoragePeer, c cid.Cid) ([]byte, error) {
 	rsc, err := Get(peer, c)
-	defer rsc.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rsc.Close()
 	return ioutil.ReadAll(rsc)
 }
 

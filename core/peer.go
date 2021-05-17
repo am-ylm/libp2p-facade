@@ -37,10 +37,8 @@ type Closeable interface {
 
 // AutoClose closes the given Closeable once the context is done
 func AutoClose(ctx context.Context, c Closeable) {
-	select {
-	case <-ctx.Done():
-		c.Close()
-	}
+	<-ctx.Done()
+	c.Close()
 }
 
 // Close closes the underlying host, dht and possibly other services (e.g. store, pubsub)

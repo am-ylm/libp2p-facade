@@ -41,7 +41,10 @@ func Connect(node LibP2PPeer, peers []peer.AddrInfo, bootDht bool) chan PeerConn
 	go func() {
 		wg.Wait()
 		if bootDht {
-			node.DHT().Bootstrap(node.Context())
+			err := node.DHT().Bootstrap(node.Context())
+			if err != nil {
+				node.Logger().Warn("could not boot dht")
+			}
 		}
 		close(connChannel)
 	}()
