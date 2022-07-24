@@ -7,7 +7,7 @@ import (
 
 var (
 	metricConnections = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "p2p:peers:connected",
+		Name: "p2p_peers_connected",
 		Help: "Count connected peers",
 	}, []string{"pid"})
 )
