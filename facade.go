@@ -18,6 +18,7 @@ import (
 
 type ConnectQueue chan peer.AddrInfo
 
+// Facade is an interface on top of libp2p
 type Facade interface {
 	Start(connectQ ConnectQueue) error
 	Host() host.Host
@@ -25,10 +26,29 @@ type Facade interface {
 	io.Closer
 }
 
+// StartNodes spins up nodes according to given config
+func StartNodes(ctx context.Context, cfgs []*commons.Config) ([]Facade, error) {
+	nodes := []Facade{}
+
+	for _, cfg := range cfgs {
+		f, err := New(ctx, cfg)
+		if err != nil {
+			return nodes, err
+		}
+		nodes = append(nodes, f)
+
+		err = f.Start(nil)
+		if err != nil {
+			return nodes, err
+		}
+	}
+
+	return nodes, nil
+}
+
 // New creates a new p2p facade with the given config,
 // if options were provided they will be used instead.
 func New(ctx context.Context, cfg *commons.Config, opts ...libp2p.Option) (Facade, error) {
-
 	if len(opts) == 0 {
 		err := cfg.Init()
 		if err != nil {

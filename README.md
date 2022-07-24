@@ -6,6 +6,8 @@ Utilities plus a facade interface on top of
 It wraps configuration in a simple and extensible structure, inspired by 
 [go-libp2p/config#Config](https://pkg.go.dev/github.com/libp2p/go-libp2p/config#Config).
 
+In addition, some prometheus metrics were added.
+
 ## Install 
 
 ```shell
