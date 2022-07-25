@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/libp2p/go-libp2p-core/network"
 	libp2pnetwork "github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
@@ -44,7 +43,7 @@ func (f *facade) startConnector(connectQ ConnectQueue) {
 			select {
 			case pi := <-connectQ:
 				switch f.host.Network().Connectedness(pi.ID) {
-				case network.CannotConnect, network.Connected:
+				case libp2pnetwork.CannotConnect, libp2pnetwork.Connected:
 					return
 				default:
 				}

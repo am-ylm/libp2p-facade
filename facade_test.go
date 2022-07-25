@@ -43,6 +43,7 @@ func TestStreams(t *testing.T) {
 		}(f)
 	}
 	wg.Wait()
+	<-time.After(time.Second)
 	t.Log("configured stream handlers", pid)
 	send := func(from, to Facade, i int) {
 		defer wg.Done()
