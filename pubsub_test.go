@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,13 +28,12 @@ func TestPubsub(t *testing.T) {
 	for _, f := range nodes {
 		wg.Add(1)
 		go func(facade Facade) {
-			cn, err := facade.Subscribe(topicName, 2)
-			require.NoError(t, err)
-			wg.Done()
-			for msg := range cn {
+			err := facade.Subscribe(topicName, func(msg *pubsub.Message) {
 				require.NotNil(t, msg)
 				atomic.AddInt64(&msgCount, 1)
-			}
+			}, 2)
+			require.NoError(t, err)
+			wg.Done()
 		}(f)
 		require.NoError(t, f.Close())
 	}

@@ -9,13 +9,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+type PubsubHandler func(*pubsublibp2p.Message)
+
 type PubsubService interface {
 	Pubsub() *pubsublibp2p.PubSub
 	Publish(topicName string, data []byte) error
 	GetTopic(topicName string) *pubsublibp2p.Topic
 	GetSubscription(topicName string) *pubsublibp2p.Subscription
 	UnSubscribe(topicName string) error
-	Subscribe(topicName string, bufferSize int) (chan *pubsublibp2p.Message, error)
+	Subscribe(topicName string, handler PubsubHandler, bufferSize int) error
 }
 
 var (
@@ -107,16 +109,24 @@ func (pst *pubsubService) UnSubscribe(topicName string) error {
 	return err
 }
 
-func (pst *pubsubService) Subscribe(topicName string, bufferSize int) (chan *pubsublibp2p.Message, error) {
+func (pst *pubsubService) Subscribe(topicName string, handler PubsubHandler, bufferSize int) error {
 	pst.lock.Lock()
 	defer pst.lock.Unlock()
 
 	sub, err := pst.subscribe(topicName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return pst.listen(sub, bufferSize), nil
+	cn := pst.listen(sub, bufferSize)
+
+	go func() {
+		for msg := range cn {
+			handler(msg)
+		}
+	}()
+
+	return nil
 }
 
 func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscription, error) {
@@ -133,7 +143,7 @@ func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscriptio
 	s, ok := pst.subs[topicName]
 	if ok && s != nil {
 		// already subscribed
-		return s, nil
+		return nil, nil
 	}
 	sub, err := t.Subscribe()
 	if err != nil {

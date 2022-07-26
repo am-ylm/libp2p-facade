@@ -49,7 +49,7 @@ func (f *facade) Publish(topicName string, data []byte) error {
 }
 
 // Subscribe implements Facade
-func (f *facade) Subscribe(topicName string, bufferSize int) (chan *pubsublibp2p.Message, error) {
+func (f *facade) Subscribe(topicName string, handler pubsub.PubsubHandler, bufferSize int) error {
 	topicCfgs := f.cfg.Pubsub.GetTopicCfg(topicName)
 	if len(topicCfgs) > 0 {
 		topicCfg := topicCfgs[0] // TODO: consider other configs
@@ -60,7 +60,7 @@ func (f *facade) Subscribe(topicName string, bufferSize int) (chan *pubsublibp2p
 	if bufferSize == 0 {
 		bufferSize = defaultPubsubMsgBufferSize
 	}
-	return f.ps.Subscribe(topicName, bufferSize)
+	return f.ps.Subscribe(topicName, handler, bufferSize)
 }
 
 // UnSubscribe implements Facade
