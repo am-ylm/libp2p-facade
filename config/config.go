@@ -1,4 +1,4 @@
-package commons
+package config
 
 import (
 	crand "crypto/rand"
@@ -197,7 +197,14 @@ func (pcfg *PubsubConfig) GetTopicCfg(topicName string) []PubsubTopicConfig {
 }
 
 type PubsubTopicConfig struct {
-	Name       string `json:"name" yaml:"name"`
-	BufferSize int    `json:"bufferSize" yaml:"bufferSize"`
+	Name               string              `json:"name" yaml:"name"`
+	BufferSize         int                 `json:"bufferSize" yaml:"bufferSize"`
+	SubscriptionFilter *SubscriptionFilter `json:"subscriptionFilter" yaml:"subscriptionFilter"`
+	// MsgValidator string    `json:"msgValidator" yaml:"msgValidator"`
 	// TODO: add more fields
+}
+
+type SubscriptionFilter struct {
+	Pattern string `json:"pattern" yaml:"pattern"`
+	Limit   int    `json:"limit" yaml:"limit"`
 }

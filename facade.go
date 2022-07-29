@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/amirylm/libp2p-facade/commons"
+	"github.com/amirylm/libp2p-facade/config"
 	"github.com/amirylm/libp2p-facade/pubsub"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -27,7 +27,7 @@ type Facade interface {
 }
 
 // StartNodes spins up nodes according to given config
-func StartNodes(ctx context.Context, cfgs []*commons.Config) ([]Facade, error) {
+func StartNodes(ctx context.Context, cfgs []*config.Config) ([]Facade, error) {
 	nodes := []Facade{}
 
 	for _, cfg := range cfgs {
@@ -48,7 +48,7 @@ func StartNodes(ctx context.Context, cfgs []*commons.Config) ([]Facade, error) {
 
 // New creates a new p2p facade with the given config,
 // if options were provided they will be used instead.
-func New(ctx context.Context, cfg *commons.Config, opts ...libp2p.Option) (Facade, error) {
+func New(ctx context.Context, cfg *config.Config, opts ...libp2p.Option) (Facade, error) {
 	if len(opts) == 0 {
 		err := cfg.Init()
 		if err != nil {
@@ -101,7 +101,7 @@ func New(ctx context.Context, cfg *commons.Config, opts ...libp2p.Option) (Facad
 
 type facade struct {
 	ctx  context.Context
-	cfg  *commons.Config
+	cfg  *config.Config
 	host host.Host
 	ps   pubsub.PubsubService
 

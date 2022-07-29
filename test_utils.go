@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/amirylm/libp2p-facade/commons"
+	"github.com/amirylm/libp2p-facade/config"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -14,7 +15,7 @@ import (
 )
 
 func newLocalNetwork(ctx context.Context, t *testing.T, n int) []Facade {
-	cfgs := []*commons.Config{}
+	cfgs := []*config.Config{}
 	for i := 0; i < n; i++ {
 		cfgs = append(cfgs, newLocalConfig(ctx, i, n))
 	}
@@ -29,11 +30,11 @@ func newLocalNetwork(ctx context.Context, t *testing.T, n int) []Facade {
 	return nodes
 }
 
-func newLocalConfig(ctx context.Context, i, maxPeers int) *commons.Config {
-	cfg := commons.Config{
-		Pubsub: &commons.PubsubConfig{
-			Config: &commons.PubsubTopicConfig{},
-			Topics: []commons.PubsubTopicConfig{},
+func newLocalConfig(ctx context.Context, i, maxPeers int) *config.Config {
+	cfg := config.Config{
+		Pubsub: &config.PubsubConfig{
+			Config: &config.PubsubTopicConfig{},
+			Topics: []config.PubsubTopicConfig{},
 		},
 		Routing: func(h host.Host) (routing.Routing, error) {
 			kad, _, err := NewKadDHT(ctx, h, "test.mdns", dht.ModeAutoServer, nil)

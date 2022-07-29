@@ -1,0 +1,14 @@
+listenAddrs:
+  - "/ipv4/0.0.0.0/tcp/8101"
+# relayers:
+#   - "/ipv4/0.0.0.0/tcp/8001"
+#   - "/ipv4/0.0.0.0/tcp/8002"
+userAgent: "mynet/latest"
+networkSecret: ""
+mdnsServiceTag: "mynet.test.mdns"
+pubsub:
+  config:
+    bufferSize: 128
+    subscriptionFilter: ".*"
+  topics:
+    - name: "dummy"
