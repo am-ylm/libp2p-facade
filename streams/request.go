@@ -23,8 +23,6 @@ type StreamConfig struct {
 
 // Request sends a message to the given stream and returns the response
 func Request(peerID peer.ID, protocol protocol.ID, data []byte, cfg StreamConfig) ([]byte, error) {
-	metricStreamOutActive.WithLabelValues(string(protocol)).Inc()
-	defer metricStreamOutActive.WithLabelValues(string(protocol)).Dec()
 	s, err := cfg.Host.NewStream(cfg.Ctx, peerID, protocol)
 	if err != nil {
 		return nil, err
@@ -39,18 +37,18 @@ func Request(peerID peer.ID, protocol protocol.ID, data []byte, cfg StreamConfig
 		timeout = DefaultTimeout
 	}
 	if err := stream.WriteWithTimeout(data, timeout); err != nil {
-		metricStreamOutFailed.WithLabelValues(string(protocol), "write").Inc()
+		metricStreamOutDone.WithLabelValues(string(protocol), "write").Inc()
 		return nil, errors.Wrap(err, "could not write to stream")
 	}
 	if err := s.CloseWrite(); err != nil {
-		metricStreamOutFailed.WithLabelValues(string(protocol), "close_write").Inc()
+		metricStreamOutDone.WithLabelValues(string(protocol), "close_write").Inc()
 		return nil, errors.Wrap(err, "could not close-write stream")
 	}
 	res, err := stream.ReadWithTimeout(timeout)
 	if err != nil {
-		metricStreamOutFailed.WithLabelValues(string(protocol), "read").Inc()
+		metricStreamOutDone.WithLabelValues(string(protocol), "read").Inc()
 		return nil, errors.Wrap(err, "could not read stream msg")
 	}
-	metricStreamOutSuccess.WithLabelValues(string(protocol)).Inc()
+	metricStreamOutDone.WithLabelValues(string(protocol), "").Inc()
 	return res, nil
 }
