@@ -14,10 +14,18 @@ func (f *facade) setupPubsub() error {
 	if f.cfg.Pubsub == nil {
 		return nil
 	}
+	cfg := f.cfg.Pubsub
 	opts := make([]pubsublibp2p.Option, 0)
-	// if len(f.directPeers) > 0 {
-	// 	opts = append(opts, pubsub.WithDirectPeers(f.directPeers))
-	// }
+
+	if cfg.Config != nil {
+		if sfCfg := cfg.Config.SubscriptionFilter; sfCfg != nil {
+			sf, err := pubsub.NewSubFilter(sfCfg.Pattern, sfCfg.Limit)
+			if err != nil {
+				return nil
+			}
+			opts = append(opts, pubsublibp2p.WithSubscriptionFilter(sf))
+		}
+	}
 	// TODO: add options
 	ps, err := pubsublibp2p.NewGossipSub(f.ctx, f.host, opts...)
 	if err != nil {

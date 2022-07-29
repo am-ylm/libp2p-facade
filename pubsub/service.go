@@ -132,6 +132,7 @@ func (pst *pubsubService) Subscribe(topicName string, handler PubsubHandler, buf
 func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscription, error) {
 	t, ok := pst.topics[topicName]
 	if !ok {
+		// TODO: add topic opts
 		topic, err := pst.ps.Join(topicName)
 		if err != nil {
 			return nil, err
@@ -145,6 +146,7 @@ func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscriptio
 		// already subscribed
 		return nil, nil
 	}
+	// TODO: add sub opts, e.g. pubsublibp2p.WithBufferSize(topicCfg.BufferSize)
 	sub, err := t.Subscribe()
 	if err != nil {
 		_ = t.Close()
