@@ -22,6 +22,10 @@ var (
 		Name: "p2p_pubsub_in_dropped",
 		Help: "Counts incoming pubsub messages that were dropped",
 	}, []string{"topic"})
+	metricsPubsubTrace = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "p2p_pubsub_trace",
+		Help: "Tracks pubsub tracing events",
+	}, []string{"tp"})
 )
 
 func init() {

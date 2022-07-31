@@ -26,6 +26,7 @@ func (f *facade) setupPubsub() error {
 			opts = append(opts, pubsublibp2p.WithSubscriptionFilter(sf))
 		}
 	}
+	pubsublibp2p.WithEventTracer(pubsub.NewReportingTracer())
 	// TODO: add options
 	ps, err := pubsublibp2p.NewGossipSub(f.ctx, f.host, opts...)
 	if err != nil {
