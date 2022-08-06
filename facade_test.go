@@ -69,7 +69,7 @@ func TestStreams(t *testing.T) {
 
 	<-time.After(2 * time.Second)
 
-	require.GreaterOrEqual(t, atomic.LoadInt64(&successMsgCount), int64(4))
+	require.GreaterOrEqual(t, atomic.LoadInt64(&successMsgCount), int64(3))
 
 	for _, f := range nodes {
 		require.NoError(t, f.Close())
