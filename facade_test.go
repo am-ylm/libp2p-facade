@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: remove timeouts
 func TestStreams(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -21,7 +22,7 @@ func TestStreams(t *testing.T) {
 	n := 10
 	nodes := newLocalNetwork(ctx, t, n)
 
-	<-time.After(time.Second)
+	<-time.After(2 * time.Second)
 
 	pid := core.ProtocolID("/mytest")
 	var wg sync.WaitGroup
@@ -43,7 +44,7 @@ func TestStreams(t *testing.T) {
 		}(f)
 	}
 	wg.Wait()
-	<-time.After(time.Second)
+	<-time.After(2 * time.Second)
 	t.Log("configured stream handlers", pid)
 	send := func(from, to Facade, i int) {
 		defer wg.Done()
@@ -65,6 +66,8 @@ func TestStreams(t *testing.T) {
 	go send(nodes[5], nodes[4], 5)
 
 	wg.Wait()
+
+	<-time.After(2 * time.Second)
 
 	require.GreaterOrEqual(t, atomic.LoadInt64(&successMsgCount), int64(4))
 
