@@ -7,7 +7,7 @@ import (
 
 var (
 	metricPubsubListening = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "p2p_pubsub_listen",
+		Name: "p2p_pubsub_topics",
 		Help: "Counts topics that we listen to",
 	}, []string{"topic"})
 	metricPubsubOut = promauto.NewCounterVec(prometheus.CounterOpts{

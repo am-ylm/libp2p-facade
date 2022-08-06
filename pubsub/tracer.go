@@ -5,12 +5,6 @@ import (
 	ps_pb "github.com/libp2p/go-libp2p-pubsub/pb"
 )
 
-// pubsub tracer states
-const (
-	psTraceStateWithReporting uint32 = 0
-	psTraceStateWithLogging   uint32 = 1
-)
-
 // psTracer helps to trace pubsub events
 type psTracer struct {
 }
