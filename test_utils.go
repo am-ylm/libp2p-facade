@@ -32,14 +32,14 @@ func newLocalNetwork(ctx context.Context, t *testing.T, n int) []Facade {
 
 func newLocalConfig(ctx context.Context, i, maxPeers int) *config.Config {
 	cfg := config.Config{
-		Pubsub: &config.PubsubConfig{
-			Config: &config.PubsubTopicConfig{},
-			Topics: []config.PubsubTopicConfig{},
-		},
 		Routing: func(h host.Host) (routing.Routing, error) {
 			kad, _, err := NewKadDHT(ctx, h, "test.mdns", dht.ModeAutoServer, nil)
 			return kad, err
 		},
+	}
+	cfg.Pubsub = &config.PubsubConfig{
+		Config: &config.PubsubTopicConfig{},
+		Topics: []config.PubsubTopicConfig{},
 	}
 	cfg.ListenAddrs = []string{"/ip4/0.0.0.0/tcp/0"}
 	cfg.UserAgent = fmt.Sprintf("test/v0/%d", i)

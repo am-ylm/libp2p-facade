@@ -2,6 +2,7 @@ package config
 
 import (
 	crand "crypto/rand"
+	"encoding/json"
 	"regexp"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -48,6 +50,8 @@ type StaticConfig struct {
 	MdnsServiceTag string `json:"mdnsServiceTag,omitempty" yaml:"mdnsServiceTag,omitempty"`
 	// UserAgent is the user agent string used by identify protocol
 	UserAgent string `json:"userAgent,omitempty" yaml:"userAgent,omitempty"`
+	// Pubsub is the pubsub config
+	Pubsub *PubsubConfig `json:"pubsub,omitempty" yaml:"pubsub,omitempty"`
 }
 
 // Config contains both dynamic (libp2p components) and static information (json/yaml).
@@ -65,8 +69,34 @@ type Config struct {
 	Peerstore       peerstore.Peerstore
 
 	Routing func(h host.Host) (routing.Routing, error)
+}
 
-	Pubsub *PubsubConfig
+func (c *Config) UnmarshalJSON(b []byte) error {
+	var static StaticConfig
+	if err := json.Unmarshal(b, &static); err != nil {
+		return err
+	}
+	c.StaticConfig = static
+
+	return nil
+}
+
+func (c *Config) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&c.StaticConfig)
+}
+
+func (c *Config) UnmarshalYAML(b []byte) error {
+	var static StaticConfig
+	if err := yaml.Unmarshal(b, &static); err != nil {
+		return err
+	}
+	c.StaticConfig = static
+
+	return nil
+}
+
+func (c *Config) MarshalYAML() ([]byte, error) {
+	return yaml.Marshal(&c.StaticConfig)
 }
 
 // Libp2pOptions returns a list of libp2p options for the given config
@@ -198,13 +228,13 @@ func (pcfg *PubsubConfig) GetTopicCfg(topicName string) []PubsubTopicConfig {
 
 type PubsubTopicConfig struct {
 	Name               string              `json:"name" yaml:"name"`
-	BufferSize         int                 `json:"bufferSize" yaml:"bufferSize"`
-	SubscriptionFilter *SubscriptionFilter `json:"subscriptionFilter" yaml:"subscriptionFilter"`
+	BufferSize         int                 `json:"bufferSize,omitempty" yaml:"bufferSize,omitempty"`
+	SubscriptionFilter *SubscriptionFilter `json:"subscriptionFilter,omitempty" yaml:"subscriptionFilter,omitempty"`
 	// MsgValidator string    `json:"msgValidator" yaml:"msgValidator"`
 	// TODO: add more fields
 }
 
 type SubscriptionFilter struct {
-	Pattern string `json:"pattern" yaml:"pattern"`
-	Limit   int    `json:"limit" yaml:"limit"`
+	Pattern string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
+	Limit   int    `json:"limit,omitempty" yaml:"limit,omitempty"`
 }
