@@ -151,6 +151,8 @@ func (cfg *Config) Libp2pOptions() ([]libp2p.Option, error) {
 		opts = append(opts, libp2p.EnableAutoRelay())
 	}
 
+	opts = append(opts, cfg.Opts...)
+
 	return opts, nil
 }
 
