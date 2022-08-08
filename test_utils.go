@@ -21,7 +21,7 @@ func newLocalNetwork(ctx context.Context, t *testing.T, n int) []Facade {
 	}
 	nodes, err := StartNodes(ctx, cfgs)
 	require.NoError(t, err)
-	require.Len(t, nodes, 10)
+	require.Len(t, nodes, n)
 
 	for _, f := range nodes {
 		require.NoError(t, commons.EnsureConnectedPeers(ctx, f.Host(), n/2, time.Second*8))
