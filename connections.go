@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	logging "github.com/ipfs/go-log/v2"
 	libp2pnetwork "github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
@@ -24,6 +25,10 @@ const (
 	backoffConnectorCacheSize = 1024
 	// connectorQueueSize is the buffer size of the channel used by the connector
 	connectorQueueSize = 32
+)
+
+var (
+	loggerConn = logging.Logger("p2p:conn")
 )
 
 // startConnector starts to receive and handle incoming connect requests
@@ -47,7 +52,7 @@ func (f *facade) startConnector(connectQ ConnectQueue) {
 					return
 				default:
 				}
-				logger.Debugf("found new peer %s", pi.String())
+				loggerConn.Debugf("found new peer %s", pi.String())
 				select {
 				case buffer <- pi:
 				default:
@@ -89,7 +94,8 @@ func Notiffee(net libp2pnetwork.Network) (*libp2pnetwork.NotifyBundle, func()) {
 			pid := c.RemotePeer()
 			if _, ok := connectedCache[pid]; !ok {
 				connectedCache[pid] = true
-				metricConnections.WithLabelValues(pid.String()).Inc()
+				metricConnections.WithLabelValues(n.LocalPeer().String()).Inc()
+				loggerConn.Debugf("new connected peer %s", pid.String())
 			}
 		},
 		DisconnectedF: func(n libp2pnetwork.Network, c libp2pnetwork.Conn) {
@@ -101,8 +107,9 @@ func Notiffee(net libp2pnetwork.Network) (*libp2pnetwork.NotifyBundle, func()) {
 				return
 			}
 			if _, ok := connectedCache[pid]; !ok {
-				metricConnections.WithLabelValues(pid.String()).Dec()
 				delete(connectedCache, pid)
+				metricConnections.WithLabelValues(n.LocalPeer().String()).Dec()
+				loggerConn.Debugf("disconnected peer %s", pid.String())
 			}
 		},
 	}, gc
