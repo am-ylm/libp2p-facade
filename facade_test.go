@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/amirylm/libp2p-facade/streams"
+	logging "github.com/ipfs/go-log/v2"
 	core "github.com/libp2p/go-libp2p-core"
 	"github.com/stretchr/testify/require"
 )
@@ -19,6 +20,7 @@ func TestStreams(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	require.NoError(t, logging.SetLogLevelRegex("p2p:.*", "info"))
 	n := 10
 	nodes := newLocalNetwork(ctx, t, n)
 

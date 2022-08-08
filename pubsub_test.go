@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	logging "github.com/ipfs/go-log/v2"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/stretchr/testify/require"
 )
@@ -17,6 +18,7 @@ func TestPubsub(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	require.NoError(t, logging.SetLogLevelRegex("p2p:.*", "info"))
 	n := 10
 	nodes := newLocalNetwork(ctx, t, n)
 

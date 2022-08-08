@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	logging "github.com/ipfs/go-log/v2"
 	pubsublibp2p "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/pkg/errors"
 )
@@ -22,6 +23,7 @@ type PubsubService interface {
 
 var (
 	pubsubPublishTimeout = 5 * time.Second
+	logger               = logging.Logger("p2p:pubsub")
 )
 
 type TopicConfigurer func(topic *pubsublibp2p.Topic)
@@ -38,6 +40,7 @@ type pubsubService struct {
 }
 
 func NewPubsubService(ctx context.Context, ps *pubsublibp2p.PubSub, configurer TopicConfigurer) PubsubService {
+	logger.Debug("creating pubsub service")
 	return &pubsubService{
 		ctx:        ctx,
 		ps:         ps,
@@ -83,6 +86,7 @@ func (pst *pubsubService) Publish(topicName string, data []byte) error {
 	}
 	err := topic.Publish(fctx, data)
 	if err == nil {
+		logger.Debugf("published msg on topic %s", topicName)
 		metricPubsubOut.WithLabelValues(topicName).Inc()
 	}
 	return err
@@ -105,6 +109,8 @@ func (pst *pubsubService) UnSubscribe(topicName string) error {
 
 	delete(pst.topics, topicName)
 	delete(pst.subs, topicName)
+
+	logger.Debugf("unsubsribed from topic %s", topicName)
 
 	return err
 }
@@ -139,6 +145,7 @@ func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscriptio
 		}
 		pst.topics[topicName] = topic
 		t = topic
+		logger.Debugf("joined topic %s", topicName)
 	}
 
 	s, ok := pst.subs[topicName]
@@ -155,6 +162,8 @@ func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscriptio
 	}
 	pst.subs[topicName] = sub
 
+	logger.Debugf("subscribed topic %s", topicName)
+
 	return sub, nil
 }
 
@@ -170,7 +179,7 @@ func (pst *pubsubService) listen(sub *pubsublibp2p.Subscription, bufferSize int)
 			sub.Cancel()
 			cancel()
 		}()
-
+		logger.Debugf("listening on topic %s", topicName)
 		metricPubsubListening.WithLabelValues(topicName).Inc()
 		for ctx.Err() == nil {
 			next, err := sub.Next(ctx)

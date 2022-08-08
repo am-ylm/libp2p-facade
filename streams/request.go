@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -12,6 +13,10 @@ import (
 
 const (
 	DefaultTimeout = 15 * time.Second
+)
+
+var (
+	logger = logging.Logger("p2p:stream")
 )
 
 // StreamConfig is the config object required to make a request
@@ -49,6 +54,7 @@ func Request(peerID peer.ID, protocol protocol.ID, data []byte, cfg StreamConfig
 		metricStreamOutDone.WithLabelValues(string(protocol), "read").Inc()
 		return nil, errors.Wrap(err, "could not read stream msg")
 	}
+	logger.Debugf("successful stream request %s, target peer: %s", string(protocol), peerID.String())
 	metricStreamOutDone.WithLabelValues(string(protocol), "").Inc()
 	return res, nil
 }

@@ -21,7 +21,7 @@ func newLocalNetwork(ctx context.Context, t *testing.T, n int) []Facade {
 	}
 	nodes, err := StartNodes(ctx, cfgs)
 	require.NoError(t, err)
-	require.Len(t, nodes, 10)
+	require.Len(t, nodes, n)
 
 	for _, f := range nodes {
 		require.NoError(t, commons.EnsureConnectedPeers(ctx, f.Host(), n/2, time.Second*8))
@@ -33,7 +33,7 @@ func newLocalNetwork(ctx context.Context, t *testing.T, n int) []Facade {
 func newLocalConfig(ctx context.Context, i, maxPeers int) *config.Config {
 	cfg := config.Config{
 		Routing: func(h host.Host) (routing.Routing, error) {
-			kad, _, err := NewKadDHT(ctx, h, "test.mdns", dht.ModeAutoServer, nil)
+			kad, _, err := NewKadDHT(ctx, h, "test.dht", dht.ModeAutoServer, nil)
 			return kad, err
 		},
 	}
