@@ -8,12 +8,17 @@ import (
 
 	"github.com/amirylm/libp2p-facade/config"
 	"github.com/amirylm/libp2p-facade/pubsub"
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
 	libp2pdisc "github.com/libp2p/go-libp2p-discovery"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
+)
+
+var (
+	logger = logging.Logger("p2p:facade")
 )
 
 type ConnectQueue chan peer.AddrInfo
@@ -63,6 +68,7 @@ func New(ctx context.Context, cfg *config.Config, opts ...libp2p.Option) (Facade
 	if err != nil {
 		return nil, err
 	}
+	logger.Info("created new libp2p host", h.ID().String(), h.Addrs())
 	f := facade{
 		ctx:  ctx,
 		host: h,
@@ -90,11 +96,14 @@ func New(ctx context.Context, cfg *config.Config, opts ...libp2p.Option) (Facade
 	if len(f.cfg.MdnsServiceTag) > 0 {
 		f.mdnsq = make(ConnectQueue)
 		f.mdnsSvc = NewMdns(ctx, f.mdnsq, f.host, f.cfg.MdnsServiceTag)
+		logger.Info("using mdns discovery, tag", f.cfg.MdnsServiceTag)
 	}
 
 	if cfg.Pubsub != nil {
 		err = f.setupPubsub()
 	}
+
+	logger.Debug("libp2p facade was created successfully")
 
 	return &f, err
 }

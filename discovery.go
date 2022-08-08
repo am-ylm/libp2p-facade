@@ -21,6 +21,7 @@ func NewKadDHT(ctx context.Context, host host.Host, protocolPrefix protocol.ID,
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not create DHT")
 	}
+	logger.Debugf("created Kademlia DHT with protocol prefix %s", string(protocolPrefix))
 	return kdht, libp2pdisc.NewRoutingDiscovery(kdht), nil
 }
 
