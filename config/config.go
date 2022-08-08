@@ -7,17 +7,12 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/connmgr"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/metrics"
-	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/libp2p/go-libp2p-core/routing"
 	pubsublibp2p "github.com/libp2p/go-libp2p-pubsub"
-	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
@@ -56,24 +51,20 @@ type StaticConfig struct {
 }
 
 // Config contains both dynamic (libp2p components) and static information (json/yaml).
-// TODO: complete more fields from https://pkg.go.dev/github.com/libp2p/go-libp2p/config#Config
 type Config struct {
+	// StaticConfig
 	StaticConfig
 	// PrivateKey is used as the private key of the peer
 	PrivateKey crypto.PrivKey
-	// Reporter to use to collect metrics
-	Reporter        metrics.Reporter
-	AddrsFactory    bhost.AddrsFactory
-	ConnectionGater connmgr.ConnectionGater
-	ConnManager     connmgr.ConnManager
-	ResourceManager network.ResourceManager
-	Peerstore       peerstore.Peerstore
-
+	// Routing configures routing.Routing for the given host
 	Routing func(h host.Host) (routing.Routing, error)
 	// PubsubConfigurer enables to configure pubsub components dynamically
 	PubsubConfigurer PubsubConfigurer
+	// Opts is used to inject own options
+	Opts []libp2p.Option
 }
 
+// UnmarshalJSON implements json.Unmarshaler
 func (c *Config) UnmarshalJSON(b []byte) error {
 	var static StaticConfig
 	if err := json.Unmarshal(b, &static); err != nil {
@@ -84,10 +75,12 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON implements json.Marshaler
 func (c *Config) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&c.StaticConfig)
 }
 
+// UnmarshalYAML implements yaml.Unmarshaler
 func (c *Config) UnmarshalYAML(b []byte) error {
 	var static StaticConfig
 	if err := yaml.Unmarshal(b, &static); err != nil {
@@ -98,6 +91,7 @@ func (c *Config) UnmarshalYAML(b []byte) error {
 	return nil
 }
 
+// MarshalYAML implements yaml.Marshaler
 func (c *Config) MarshalYAML() ([]byte, error) {
 	return yaml.Marshal(&c.StaticConfig)
 }
@@ -141,9 +135,6 @@ func (cfg *Config) Libp2pOptions() ([]libp2p.Option, error) {
 		opts = append(opts, libp2p.UserAgent(cfg.UserAgent))
 	}
 
-	if cfg.AddrsFactory != nil {
-		opts = append(opts, libp2p.AddrsFactory(cfg.AddrsFactory))
-	}
 	if len(cfg.Relayers) > 0 {
 		opts = append(opts, libp2p.EnableRelay())
 		rels := make([]peer.AddrInfo, 0)
@@ -159,25 +150,13 @@ func (cfg *Config) Libp2pOptions() ([]libp2p.Option, error) {
 	if cfg.EnableAutoRelay {
 		opts = append(opts, libp2p.EnableAutoRelay())
 	}
-	if cfg.Peerstore != nil {
-		opts = append(opts, libp2p.Peerstore(cfg.Peerstore))
-	}
-	if cfg.ConnectionGater != nil {
-		opts = append(opts, libp2p.ConnectionGater(cfg.ConnectionGater))
-	}
-	if cfg.ConnManager != nil {
-		opts = append(opts, libp2p.ConnectionManager(cfg.ConnManager))
-	}
-	if cfg.Reporter != nil {
-		opts = append(opts, libp2p.BandwidthReporter(cfg.Reporter))
-	}
-	if cfg.ResourceManager != nil {
-		opts = append(opts, libp2p.ResourceManager(cfg.ResourceManager))
-	}
+
+	opts = append(opts, cfg.Opts...)
 
 	return opts, nil
 }
 
+// Init initialize config
 func (cfg *Config) Init() error {
 	if err := cfg.initPrivateKey(); err != nil {
 		return errors.Wrap(err, "could not initialize private key")

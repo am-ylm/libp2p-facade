@@ -10,8 +10,7 @@ Utilities plus a facade interface on top of
 
 - Streams were simplfied into a `Request` and `Handle` procedues
 - Pubsub can be used with a simpler api to avoid topic management
-- Config has a simple and extensible structure, inspired by 
-[go-libp2p/config#Config](https://pkg.go.dev/github.com/libp2p/go-libp2p/config#Config)
+- Config has a simple and extensible structure
 - Metrics (prometheus)
 
 ## Install 
