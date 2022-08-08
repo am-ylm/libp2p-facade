@@ -69,6 +69,8 @@ func Notiffee(net libp2pnetwork.Network) (*libp2pnetwork.NotifyBundle, func()) {
 	connectedCache := map[peer.ID]bool{}
 	l := &sync.RWMutex{}
 
+	selfID := net.LocalPeer().String()
+
 	gc := func() {
 		l.Lock()
 		defer l.Unlock()
@@ -94,7 +96,7 @@ func Notiffee(net libp2pnetwork.Network) (*libp2pnetwork.NotifyBundle, func()) {
 			pid := c.RemotePeer()
 			if _, ok := connectedCache[pid]; !ok {
 				connectedCache[pid] = true
-				metricConnections.WithLabelValues(n.LocalPeer().String()).Inc()
+				metricConnections.WithLabelValues(selfID).Inc()
 				loggerConn.Debugf("new connected peer %s", pid.String())
 			}
 		},
@@ -108,7 +110,7 @@ func Notiffee(net libp2pnetwork.Network) (*libp2pnetwork.NotifyBundle, func()) {
 			}
 			if _, ok := connectedCache[pid]; !ok {
 				delete(connectedCache, pid)
-				metricConnections.WithLabelValues(n.LocalPeer().String()).Dec()
+				metricConnections.WithLabelValues(selfID).Dec()
 				loggerConn.Debugf("disconnected peer %s", pid.String())
 			}
 		},
