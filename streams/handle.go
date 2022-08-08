@@ -19,7 +19,9 @@ func HandleStream(stream core.Stream, timeout time.Duration) ([]byte, RespondStr
 
 	metricStreamIn.WithLabelValues(string(protocol)).Inc()
 	s := NewStream(stream)
+	pid := stream.Conn().RemotePeer().String()
 	done := func() error {
+		logger.Debugf("closing stream %s, src peer: %s", string(protocol), pid)
 		return s.Close()
 	}
 	if timeout == 0 {
@@ -35,6 +37,7 @@ func HandleStream(stream core.Stream, timeout time.Duration) ([]byte, RespondStr
 			metricStreamInDone.WithLabelValues(string(protocol), "write").Inc()
 			return errors.Wrap(err, "could not write to stream")
 		}
+		logger.Debugf("handle stream success %s, src peer: %s", string(protocol), pid)
 		metricStreamInDone.WithLabelValues(string(protocol), "").Inc()
 		return nil
 	}
