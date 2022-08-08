@@ -20,7 +20,7 @@ func TestStreams(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	require.NoError(t, logging.SetLogLevelRegex("p2p:.*", "info"))
+	require.NoError(t, logging.SetLogLevelRegex("p2p:.*", "debug"))
 	n := 10
 	nodes := newLocalNetwork(ctx, t, n)
 

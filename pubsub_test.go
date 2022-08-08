@@ -18,7 +18,7 @@ func TestPubsub(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	require.NoError(t, logging.SetLogLevelRegex("p2p:.*", "info"))
+	require.NoError(t, logging.SetLogLevelRegex("p2p:.*", "debug"))
 	n := 10
 	nodes := newLocalNetwork(ctx, t, n)
 
@@ -37,7 +37,6 @@ func TestPubsub(t *testing.T) {
 			require.NoError(t, err)
 			wg.Done()
 		}(f)
-		require.NoError(t, f.Close())
 	}
 
 	wg.Wait()
@@ -48,7 +47,7 @@ func TestPubsub(t *testing.T) {
 		topic := f.GetTopic(topicName)
 		require.NotNil(t, topic)
 		peers := topic.ListPeers()
-		require.GreaterOrEqual(t, 2, len(peers))
+		require.GreaterOrEqual(t, len(peers), 2)
 	}
 
 	for i, f := range nodes {

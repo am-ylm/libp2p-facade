@@ -16,6 +16,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/libp2p/go-libp2p-core/routing"
+	pubsublibp2p "github.com/libp2p/go-libp2p-pubsub"
 	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
@@ -69,6 +70,8 @@ type Config struct {
 	Peerstore       peerstore.Peerstore
 
 	Routing func(h host.Host) (routing.Routing, error)
+	// PubsubConfigurer enables to configure pubsub components dynamically
+	PubsubConfigurer PubsubConfigurer
 }
 
 func (c *Config) UnmarshalJSON(b []byte) error {
@@ -199,6 +202,22 @@ func (cfg *Config) initPrivateKey() error {
 		cfg.PrivateKey = sk
 	}
 	return nil
+}
+
+// PubsubConfigurer helps to aid in a custom set of configurations for pubsub
+type PubsubConfigurer interface {
+	// Topic enalbes to configure a topic, e.g. score params
+	Topic(topic *pubsublibp2p.Topic)
+	// TopicValidator returns the topic validator of this topic
+	TopicValidator(topicName string) (pubsublibp2p.ValidatorEx, []pubsublibp2p.ValidatorOpt)
+	// Opts enables to inject any set of pubsublibp2p.Option
+	Opts() []pubsublibp2p.Option
+	// TopicsOpts returns the opts for the given topic
+	TopicOpts(topicName string) []pubsublibp2p.TopicOpt
+	// SubOpts are the opts for a subscription of the given topic
+	SubOpts(topicName string) []pubsublibp2p.SubOpt
+	// PubOpts is the publish options
+	PubOpts(topicName string) []pubsublibp2p.PubOpt
 }
 
 type PubsubConfig struct {

@@ -14,11 +14,11 @@ func (f *facade) setupPubsub() error {
 	if f.cfg.Pubsub == nil {
 		return nil
 	}
-	cfg := f.cfg.Pubsub
+	staticCfg := f.cfg.Pubsub
 	opts := make([]pubsublibp2p.Option, 0)
-
-	if cfg.Config != nil {
-		if sfCfg := cfg.Config.SubscriptionFilter; sfCfg != nil {
+	pubsublibp2p.WithEventTracer(pubsub.NewReportingTracer())
+	if staticCfg.Config != nil {
+		if sfCfg := staticCfg.Config.SubscriptionFilter; sfCfg != nil {
 			sf, err := pubsub.NewSubFilter(sfCfg.Pattern, sfCfg.Limit)
 			if err != nil {
 				return nil
@@ -26,13 +26,15 @@ func (f *facade) setupPubsub() error {
 			opts = append(opts, pubsublibp2p.WithSubscriptionFilter(sf))
 		}
 	}
-	pubsublibp2p.WithEventTracer(pubsub.NewReportingTracer())
-	// TODO: add options
+	if f.cfg.PubsubConfigurer == nil {
+		f.cfg.PubsubConfigurer = pubsub.NewNilConfigurer()
+	}
+	opts = append(opts, f.cfg.PubsubConfigurer.Opts()...)
 	ps, err := pubsublibp2p.NewGossipSub(f.ctx, f.host, opts...)
 	if err != nil {
 		return errors.Wrap(err, "could not setup pubsub")
 	}
-	f.ps = pubsub.NewPubsubService(f.ctx, ps, func(topic *pubsublibp2p.Topic) {})
+	f.ps = pubsub.NewPubsubService(f.ctx, ps, f.cfg.PubsubConfigurer)
 
 	return nil
 }
