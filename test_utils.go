@@ -33,7 +33,7 @@ func newLocalNetwork(ctx context.Context, t *testing.T, n int) []Facade {
 func newLocalConfig(ctx context.Context, i, maxPeers int) *config.Config {
 	cfg := config.Config{
 		Routing: func(h host.Host) (routing.Routing, error) {
-			kad, _, err := NewKadDHT(ctx, h, "test.mdns", dht.ModeAutoServer, nil)
+			kad, _, err := NewKadDHT(ctx, h, "test.dht", dht.ModeAutoServer, nil)
 			return kad, err
 		},
 	}
