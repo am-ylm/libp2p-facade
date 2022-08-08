@@ -47,6 +47,7 @@ func (f *facade) startConnector(connectQ ConnectQueue) {
 					return
 				default:
 				}
+				logger.Debugf("found new peer %s", pi.String())
 				select {
 				case buffer <- pi:
 				default:

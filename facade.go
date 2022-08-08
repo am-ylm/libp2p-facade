@@ -68,7 +68,7 @@ func New(ctx context.Context, cfg *config.Config, opts ...libp2p.Option) (Facade
 	if err != nil {
 		return nil, err
 	}
-	logger.Info("created new libp2p host", h.ID().String(), h.Addrs())
+	logger.Info("created new libp2p host ", h.ID().String(), " ", h.Addrs())
 	f := facade{
 		ctx:  ctx,
 		host: h,
