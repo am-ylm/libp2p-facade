@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/amirylm/libp2p-facade/config"
 	logging "github.com/ipfs/go-log/v2"
 	pubsublibp2p "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/pkg/errors"
@@ -36,10 +37,10 @@ type pubsubService struct {
 	subs   map[string]*pubsublibp2p.Subscription
 	lock   *sync.RWMutex
 
-	configurer TopicConfigurer
+	configurer config.PubsubConfigurer
 }
 
-func NewPubsubService(ctx context.Context, ps *pubsublibp2p.PubSub, configurer TopicConfigurer) PubsubService {
+func NewPubsubService(ctx context.Context, ps *pubsublibp2p.PubSub, configurer config.PubsubConfigurer) PubsubService {
 	logger.Debug("creating pubsub service")
 	return &pubsubService{
 		ctx:        ctx,
@@ -84,7 +85,7 @@ func (pst *pubsubService) Publish(topicName string, data []byte) error {
 	if topic == nil {
 		return errors.Errorf("topic not found: %s", topicName)
 	}
-	err := topic.Publish(fctx, data)
+	err := topic.Publish(fctx, data, pst.configurer.PubOpts(topicName)...)
 	if err == nil {
 		logger.Debugf("published msg on topic %s", topicName)
 		metricPubsubOut.WithLabelValues(topicName).Inc()
@@ -138,11 +139,18 @@ func (pst *pubsubService) Subscribe(topicName string, handler PubsubHandler, buf
 func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscription, error) {
 	t, ok := pst.topics[topicName]
 	if !ok {
-		// TODO: add topic opts
-		topic, err := pst.ps.Join(topicName)
+		topic, err := pst.ps.Join(topicName, pst.configurer.TopicOpts(topicName)...)
 		if err != nil {
 			return nil, err
 		}
+		if val, valOpts := pst.configurer.TopicValidator(topicName); val != nil {
+			_ = pst.ps.UnregisterTopicValidator(topicName)
+			err := pst.ps.RegisterTopicValidator(topicName, val, valOpts...)
+			if err != nil {
+				return nil, err
+			}
+		}
+		pst.configurer.Topic(topic)
 		pst.topics[topicName] = topic
 		t = topic
 		logger.Debugf("joined topic %s", topicName)
@@ -154,7 +162,7 @@ func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscriptio
 		return nil, nil
 	}
 	// TODO: add sub opts, e.g. pubsublibp2p.WithBufferSize(topicCfg.BufferSize)
-	sub, err := t.Subscribe()
+	sub, err := t.Subscribe(pst.configurer.SubOpts(topicName)...)
 	if err != nil {
 		_ = t.Close()
 		delete(pst.topics, topicName)

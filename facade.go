@@ -96,7 +96,7 @@ func New(ctx context.Context, cfg *config.Config, opts ...libp2p.Option) (Facade
 	if len(f.cfg.MdnsServiceTag) > 0 {
 		f.mdnsq = make(ConnectQueue)
 		f.mdnsSvc = NewMdns(ctx, f.mdnsq, f.host, f.cfg.MdnsServiceTag)
-		logger.Info("using mdns discovery, tag", f.cfg.MdnsServiceTag)
+		logger.Info("using mdns discovery, tag ", f.cfg.MdnsServiceTag)
 	}
 
 	if cfg.Pubsub != nil {
