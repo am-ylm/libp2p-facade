@@ -25,12 +25,17 @@ type subFilter struct {
 
 // CanSubscribe implements pubsub.SubscriptionFilter
 func (sf *subFilter) CanSubscribe(topic string) bool {
-	return sf.reg.MatchString(topic)
+	if !sf.reg.MatchString(topic) {
+		logger.Debugf("sub-filter: topic %s doesn't match pattern", topic)
+		return false
+	}
+	return true
 }
 
 // FilterIncomingSubscriptions implements pubsub.SubscriptionFilter
 func (sf *subFilter) FilterIncomingSubscriptions(pi peer.ID, subs []*pb.RPC_SubOpts) ([]*pb.RPC_SubOpts, error) {
 	if len(subs) > sf.limit {
+		logger.Debugf("sub-filter: reached subscriptions limit %d", sf.limit)
 		return nil, libpubsub.ErrTooManySubscriptions
 	}
 
