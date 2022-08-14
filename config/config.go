@@ -3,7 +3,6 @@ package config
 import (
 	crand "crypto/rand"
 	"encoding/json"
-	"regexp"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
@@ -46,8 +45,6 @@ type StaticConfig struct {
 	MdnsServiceTag string `json:"mdnsServiceTag,omitempty" yaml:"mdnsServiceTag,omitempty"`
 	// UserAgent is the user agent string used by identify protocol
 	UserAgent string `json:"userAgent,omitempty" yaml:"userAgent,omitempty"`
-	// Pubsub is the pubsub config
-	Pubsub *PubsubConfig `json:"pubsub,omitempty" yaml:"pubsub,omitempty"`
 }
 
 // Config contains both dynamic (libp2p components) and static information (json/yaml).
@@ -197,42 +194,4 @@ type PubsubConfigurer interface {
 	SubOpts(topicName string) []pubsublibp2p.SubOpt
 	// PubOpts is the publish options
 	PubOpts(topicName string) []pubsublibp2p.PubOpt
-}
-
-type PubsubConfig struct {
-	// Config is the general configuration in the pubsub router level
-	Config *PubsubTopicConfig `json:"config" yaml:"config"`
-	// Topics is the configuration for topics
-	Topics []PubsubTopicConfig `json:"topics" yaml:"topics"`
-}
-
-// GetTopicCfg returns all the relevant configs (including regex) for the given topic name
-func (pcfg *PubsubConfig) GetTopicCfg(topicName string) []PubsubTopicConfig {
-	if pcfg == nil || len(pcfg.Topics) == 0 {
-		return nil
-	}
-	var res []PubsubTopicConfig
-	for _, topicCfg := range pcfg.Topics {
-		re, err := regexp.Compile(topicCfg.Name)
-		if err != nil {
-			continue
-		}
-		if re.MatchString(topicName) {
-			res = append(res, topicCfg)
-		}
-	}
-	return res
-}
-
-type PubsubTopicConfig struct {
-	Name               string              `json:"name" yaml:"name"`
-	BufferSize         int                 `json:"bufferSize,omitempty" yaml:"bufferSize,omitempty"`
-	SubscriptionFilter *SubscriptionFilter `json:"subscriptionFilter,omitempty" yaml:"subscriptionFilter,omitempty"`
-	// MsgValidator string    `json:"msgValidator" yaml:"msgValidator"`
-	// TODO: add more fields
-}
-
-type SubscriptionFilter struct {
-	Pattern string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
-	Limit   int    `json:"limit,omitempty" yaml:"limit,omitempty"`
 }

@@ -22,6 +22,10 @@ type PubsubService interface {
 	Subscribe(topicName string, handler PubsubHandler, bufferSize int) error
 }
 
+const (
+	defaultPubsubMsgBufferSize = 32
+)
+
 var (
 	pubsubPublishTimeout = 5 * time.Second
 	logger               = logging.Logger("p2p:pubsub")
@@ -176,6 +180,9 @@ func (pst *pubsubService) subscribe(topicName string) (*pubsublibp2p.Subscriptio
 }
 
 func (pst *pubsubService) listen(sub *pubsublibp2p.Subscription, bufferSize int) chan *pubsublibp2p.Message {
+	if bufferSize == 0 {
+		bufferSize = defaultPubsubMsgBufferSize
+	}
 	receiver := make(chan *pubsublibp2p.Message, bufferSize)
 
 	go func() {
@@ -186,6 +193,7 @@ func (pst *pubsubService) listen(sub *pubsublibp2p.Subscription, bufferSize int)
 			close(receiver)
 			sub.Cancel()
 			cancel()
+			logger.Debugf("stopped listening on topic %s", topicName)
 		}()
 		logger.Debugf("listening on topic %s", topicName)
 		metricPubsubListening.WithLabelValues(topicName).Inc()
@@ -208,7 +216,7 @@ func (pst *pubsubService) listen(sub *pubsublibp2p.Subscription, bufferSize int)
 				metricPubsubIn.WithLabelValues(topicName).Inc()
 			default:
 				metricPubsubInDropped.WithLabelValues(topicName).Inc()
-				// dropping message as channel is full
+				logger.Debugf("dropping message: queue is full [%s]:", topicName)
 			}
 		}
 	}()

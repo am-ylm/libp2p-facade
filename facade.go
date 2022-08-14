@@ -99,8 +99,8 @@ func New(ctx context.Context, cfg *config.Config, opts ...libp2p.Option) (Facade
 		logger.Info("using mdns discovery, tag ", f.cfg.MdnsServiceTag)
 	}
 
-	if cfg.Pubsub != nil {
-		err = f.setupPubsub()
+	if err := f.setupPubsub(); err != nil {
+		return &f, err
 	}
 
 	logger.Debug("libp2p facade was created successfully")
